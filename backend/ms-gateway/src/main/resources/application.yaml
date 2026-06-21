@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      # Configuración CORS para que React pueda consumir la API
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:5173"
+              - "http://*.localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: true
+      # Configuración de las rutas
+      routes:
+        - id: auth-route
+          uri: lb://ms-auth
+          predicates:
+            - Path=/api/auth/**, /api/colegios/**
+          filters:
+            - AuthenticationFilter
+
+        - id: academico-route
+          uri: lb://ms-academico
+          predicates:
+            - Path=/api/academicos/**
+          filters:
+            - AuthenticationFilter
+
+        - id: finanzas-route
+          uri: lb://ms-finanzas
+          predicates:
+            - Path=/api/finanzas/**
+          filters:
+            - AuthenticationFilter # <--- Filtro agregado
+
+        - id: comunicacion-route
+          uri: lb://ms-comunicacion
+          predicates:
+            - Path=/api/comunicacion/**
+          filters:
+            - AuthenticationFilter # <--- Filtro agregado preventivamente
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

@@ -1,0 +1,26 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ms-finanzas
+  datasource:
+    url: jdbc:postgresql://${DB_SERVER:localhost}:5432/saas_finanzas_db
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:tu_password_aqui}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    host: ${RABBITMQ_SERVER:localhost}
+    port: 5672
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

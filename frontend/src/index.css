@@ -1,0 +1,23 @@
+/* 1. La nueva forma de importar Tailwind en la versión 4 (Elimina el error de @tailwind) */
+@import "tailwindcss";
+
+/* 2. Activador manual del Modo Oscuro para Tailwind v4 */
+@custom-variant dark (&:is(.dark *));
+
+/* 3. Nuestras variables de colores (La Paleta) */
+:root {
+  --color-primary: #5b21b6; /* Un morado institucional muy elegante */
+  --color-secondary: #64748b;
+}
+
+[data-theme="emerald"] {
+  --color-primary: #059669;
+}
+
+/* Quitamos el @apply que tenías antes para que VS Code no se queje, 
+   y usamos CSS puro para la transición del fondo */
+body {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
