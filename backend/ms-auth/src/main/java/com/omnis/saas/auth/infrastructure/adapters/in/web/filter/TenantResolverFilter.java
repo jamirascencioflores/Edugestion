@@ -24,6 +24,7 @@ public class TenantResolverFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        log.info("URI solicitada: {} | ServerName: {} | Header X-Subdominio: {}", request.getRequestURI(), request.getServerName(), request.getHeader("X-Subdominio"));
 
         // 1. BYPASS CORS: Dejar pasar las peticiones OPTIONS sin restricciones
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
@@ -33,12 +34,10 @@ public class TenantResolverFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 2. Dejamos pasar libremente las rutas públicas y globales
-        if (path != null && (path.contains("/login") ||
+        // 2. Dejamos pasar libremente solo las rutas estrictamente públicas de auth
+        if (path != null && (path.equals("/api/auth/login") ||
                 path.contains("/registro") ||
-                path.contains("/sistema") ||
-                path.contains("/colegios") ||
-                path.contains("/usuarios/cambiar-password"))) {
+                path.contains("/sistema/mantenimiento"))) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -84,12 +83,12 @@ public class TenantResolverFilter extends OncePerRequestFilter {
 
         String serverName = request.getServerName();
 
-        // IGNORAR IPS Y LOCALHOST (Evita el bug del '192')
+        // ENTORNO LOCAL / IP: Forzamos el subdominio de prueba para que no falle al desarrollar
         if (serverName == null ||
                 serverName.equals("localhost") ||
                 serverName.equals("127.0.0.1") ||
                 serverName.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$")) {
-            return null;
+            return "sanpedro"; // <-- Forzamos el colegio de prueba por defecto en desarrollo
         }
 
         String[] parts = serverName.split("\\.");

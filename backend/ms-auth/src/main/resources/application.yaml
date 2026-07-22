@@ -16,10 +16,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: tu-correo@gmail.com
-    password: tu-contrasena-de-aplicacion
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: b28af248350116
+    password: 658901eb58aa3c
     properties:
       mail:
         smtp:

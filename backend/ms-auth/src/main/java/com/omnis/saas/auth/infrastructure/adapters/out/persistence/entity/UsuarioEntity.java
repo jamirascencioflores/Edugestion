@@ -44,4 +44,7 @@ public class UsuarioEntity {
     @Builder.Default // <--- Esto es vital para que el Builder lo respete
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "token_activacion")
+    private String tokenActivacion;
 }

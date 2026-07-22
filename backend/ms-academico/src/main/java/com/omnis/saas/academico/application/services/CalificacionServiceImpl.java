@@ -42,4 +42,24 @@ public class CalificacionServiceImpl implements CalificacionUseCase {
     public List<Calificacion> listarPorCursoTodosPeriodos(Long colegioId, Long cursoId) {
         return repositoryPort.buscarPorCurso(colegioId, cursoId);
     }
+
+    @Override
+    @Transactional
+    public List<Calificacion> registrarMasivo(List<Calificacion> calificaciones) {
+        return calificaciones.stream().map(notaEntrante -> {
+            // Ahora buscamos con los 4 parámetros exactos
+            repositoryPort.buscarUnica(
+                    notaEntrante.getColegioId(),
+                    notaEntrante.getEstudianteId(),
+                    notaEntrante.getCursoId(),
+                    notaEntrante.getPeriodo()
+            ).ifPresent(notaExistente -> {
+                // Le pasamos el ID a la nota nueva para que JPA haga UPDATE
+                notaEntrante.setId(notaExistente.getId());
+                notaEntrante.setFechaRegistro(notaExistente.getFechaRegistro());
+            });
+
+            return registrar(notaEntrante);
+        }).toList();
+    }
 }

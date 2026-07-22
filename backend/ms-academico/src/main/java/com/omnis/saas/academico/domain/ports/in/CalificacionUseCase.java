@@ -8,4 +8,5 @@ public interface CalificacionUseCase {
     List<Calificacion> listarPorCurso(Long colegioId, Long cursoId, String periodo);
     List<Calificacion> listarPorEstudiante(Long colegioId, Long estudianteId, String periodo);
     List<Calificacion> listarPorCursoTodosPeriodos(Long colegioId, Long cursoId);
+    List<Calificacion> registrarMasivo(List<Calificacion> calificaciones);
 }

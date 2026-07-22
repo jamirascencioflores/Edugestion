@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="BoletaNotas" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="12345678-1234-1234-1234-123456789012">
+
+    <parameter name="ESTUDIANTE_NOMBRE" class="java.lang.String"/>
+    <parameter name="GRADO_SECCION" class="java.lang.String"/>
+    <parameter name="PERIODO" class="java.lang.String"/>
+
+    <field name="curso" class="java.lang.String"/>
+    <field name="valor" class="java.lang.String"/>
+    <field name="comentario" class="java.lang.String"/>
+
+    <title>
+        <band height="90">
+            <staticText>
+                <reportElement x="0" y="0" width="555" height="30" uuid="abc"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="18" isBold="true"/>
+                </textElement>
+                <text><![CDATA[BOLETA DE CALIFICACIONES]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="0" y="40" width="300" height="20" uuid="def"/>
+                <textElement><font size="12"/></textElement>
+                <textFieldExpression><![CDATA["Estudiante: " + $P{ESTUDIANTE_NOMBRE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="60" width="300" height="20" uuid="ghi"/>
+                <textElement><font size="12"/></textElement>
+                <textFieldExpression><![CDATA["Grado y Sección: " + $P{GRADO_SECCION}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="350" y="40" width="200" height="20" uuid="jkl"/>
+                <textElement textAlignment="Right"><font size="12"/></textElement>
+                <textFieldExpression><![CDATA["Periodo: " + $P{PERIODO}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="25">
+            <staticText>
+                <reportElement x="0" y="0" width="200" height="20" uuid="mno"/>
+                <box><pen lineWidth="1.0"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[CURSO]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="200" y="0" width="100" height="20" uuid="pqr"/>
+                <box><pen lineWidth="1.0"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[CALIFICACIÓN]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="300" y="0" width="255" height="20" uuid="stu"/>
+                <box><pen lineWidth="1.0"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[COMENTARIO]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="20">
+            <textField>
+                <reportElement x="0" y="0" width="200" height="20" uuid="vwx"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Left" verticalAlignment="Middle">
+                    <paragraph leftIndent="5"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{curso}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="200" y="0" width="100" height="20" uuid="yza"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{valor}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="300" y="0" width="255" height="20" uuid="bcd"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Left" verticalAlignment="Middle">
+                    <paragraph leftIndent="5"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{comentario}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+</jasperReport>

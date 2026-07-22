@@ -2,15 +2,12 @@ package com.omnis.saas.auth.infrastructure.adapters.in.web;
 
 import com.omnis.saas.auth.domain.model.Usuario;
 import com.omnis.saas.auth.domain.ports.in.UsuarioUseCase;
-import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.AuthResponseDTO;
-import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.CambiarPasswordRequestDTO;
-import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.UsuarioRegistroDTO;
-import com.omnis.saas.auth.infrastructure.adapters.in.web.aop.AuditarAccion; // <-- Importación del espía
+import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.*;
+import com.omnis.saas.auth.infrastructure.adapters.in.web.aop.AuditarAccion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.LoginRequestDTO;
 
 import java.util.Map;
 
@@ -22,13 +19,12 @@ public class UsuarioController {
     private final UsuarioUseCase usuarioUseCase;
 
     @PostMapping("/registro")
-    @AuditarAccion(accion = "CREAR", entidad = "Usuario") // <-- Vigila la creación
+    @AuditarAccion(accion = "CREAR", entidad = "Usuario")
     public ResponseEntity<?> registrarUsuario(@RequestBody UsuarioRegistroDTO dto) {
         try {
-            // 1. Usamos toDomain() y recibimos el Usuario del dominio puro
-            Usuario nuevoUsuario = usuarioUseCase.registrarNuevoUsuario(dto.toDomain());
+            // Le pasamos el rol que viene desde el frontend dinámicamente
+            Usuario nuevoUsuario = usuarioUseCase.registrarNuevoUsuario(dto.toDomain(), dto.rol());
 
-            // 2. Retornamos los datos del nuevo usuario
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     Map.of(
                             "mensaje", "Usuario registrado exitosamente",
@@ -46,13 +42,10 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @RequestBody LoginRequestDTO dto,
-            jakarta.servlet.http.HttpServletRequest request // <-- 1. Agregamos el request
+            jakarta.servlet.http.HttpServletRequest request
     ) {
         try {
-            // 2. Extraemos el colegio (puede ser null si es el admin de sistema)
             Long colegioId = (Long) request.getAttribute("tenant_colegio_id");
-
-            // 3. Le enviamos el colegioId al caso de uso
             AuthResponseDTO response = usuarioUseCase.login(dto.email(), dto.password(), colegioId);
 
             return ResponseEntity.ok(response);
@@ -74,15 +67,13 @@ public class UsuarioController {
     }
 
     @PutMapping("/cambiar-password")
-    @AuditarAccion(accion = "ACTUALIZAR_PASSWORD", entidad = "Usuario") // <-- Vigila el cambio de clave
+    @AuditarAccion(accion = "ACTUALIZAR_PASSWORD", entidad = "Usuario")
     public ResponseEntity<?> cambiarPassword(
             @RequestBody CambiarPasswordRequestDTO dto,
             org.springframework.security.core.Authentication authentication
     ) {
         try {
-            // Extraemos el correo del usuario logueado directamente del token
             String email = authentication.getName();
-
             usuarioUseCase.cambiarPassword(email, dto.nuevaPassword());
 
             return ResponseEntity.ok(
@@ -91,6 +82,21 @@ public class UsuarioController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(
                     java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
+
+    @PostMapping("/public/activar-cuenta")
+    public ResponseEntity<?> activarCuentaPorEmail(@RequestBody ActivarCuentaRequestDTO dto) {
+        try {
+            usuarioUseCase.activarCuentaConToken(dto.token(), dto.nuevaPassword());
+
+            return ResponseEntity.ok(
+                    Map.of("mensaje", "Cuenta activada y contraseña configurada exitosamente")
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", e.getMessage())
             );
         }
     }

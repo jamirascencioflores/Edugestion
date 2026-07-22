@@ -6,7 +6,7 @@ public record CalificacionResponseDTO(
         Long id,
         Long estudianteId,
         Long cursoId,
-        Long docenteId,
+        String docenteId,
         String periodo,
         String valor,
         String comentario,

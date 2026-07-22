@@ -7,6 +7,7 @@ import com.omnis.saas.academico.infrastructure.adapters.out.persistence.reposito
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -36,5 +37,11 @@ public class CalificacionPersistenceAdapter implements CalificacionRepositoryPor
     public List<Calificacion> buscarPorCurso(Long colegioId, Long cursoId) {
         return repository.findByColegioIdAndCursoId(colegioId, cursoId)
                 .stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<Calificacion> buscarUnica(Long colegioId, Long estudianteId, Long cursoId, String periodo) {
+        return repository.findByColegioIdAndEstudianteIdAndCursoIdAndPeriodo(colegioId, estudianteId, cursoId, periodo)
+                .map(mapper::toDomain);
     }
 }

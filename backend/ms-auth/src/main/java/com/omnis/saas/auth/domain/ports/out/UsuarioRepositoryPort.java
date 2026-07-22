@@ -15,4 +15,5 @@ public interface UsuarioRepositoryPort {
     void deleteByColegioId(Long colegioId);
 
     Optional<Usuario> buscarPorEmailYColegio(String email, Long colegioId);
+    Optional<Usuario> findByTokenActivacion(String token);
 }

@@ -1,9 +1,12 @@
 package com.omnis.saas.auth.infrastructure.config;
 
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.ColegioEntity;
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.DocenteEntity;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.PlanSaasEntity;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.RolEntity;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.UsuarioEntity;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.ColegioJpaRepository;
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.DocenteJpaRepository;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.PlanSaasJpaRepository;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.RolJpaRepository;
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.UsuarioJpaRepository;
@@ -26,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PlanSaasJpaRepository planRepository;
     private final ColegioJpaRepository colegioRepository;
     private final UsuarioJpaRepository usuarioRepository;
+    private final DocenteJpaRepository docenteRepository; // <-- Inyectamos el repositorio de docentes
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -70,24 +74,75 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Planes SaaS iniciales creados.");
         }
 
-        // 3. Crear el Usuario SuperAdmin (Global, sin colegio)
+        // 3. Crear el Usuario SuperAdmin
         String emailAdmin = "superadmin@omnissaas.com";
-        Optional<UsuarioEntity> adminExistente = usuarioRepository.findByEmail(emailAdmin);
-
-        if (adminExistente.isEmpty()) {
+        if (usuarioRepository.findByEmail(emailAdmin).isEmpty()) {
             RolEntity rolEntitySuperAdmin = rolRepository.findByNombre("SUPERADMIN").orElseThrow();
-
             UsuarioEntity superAdmin = new UsuarioEntity();
             superAdmin.setEmail(emailAdmin);
             superAdmin.setPasswordHash(passwordEncoder.encode("Admin123!"));
-            superAdmin.setColegio(null); // <-- AQUÍ: El SuperAdmin es global, no tiene colegio
+            superAdmin.setColegio(null);
             superAdmin.setRolEntity(rolEntitySuperAdmin);
             superAdmin.setEstado(true);
-
             usuarioRepository.save(superAdmin);
-            log.info("Usuario SuperAdmin creado exitosamente con credenciales hasheadas.");
-        } else {
-            log.info("La base de datos ya cuenta con los datos iniciales requeridos.");
+            log.info("Usuario SuperAdmin creado exitosamente.");
+        }
+
+        // 4. Buscar o Crear Colegio "San Pedro" por su subdominio exacto
+        ColegioEntity colegio = colegioRepository.findBySubdominio("sanpedro").orElseGet(() -> {
+            PlanSaasEntity planPremium = planRepository.findAll().stream()
+                    .filter(p -> p.getNombre().equals("PREMIUM"))
+                    .findFirst().orElseThrow();
+
+            ColegioEntity nuevoColegio = new ColegioEntity();
+            nuevoColegio.setNombre("Colegio San Pedro");
+            nuevoColegio.setSubdominio("sanpedro");
+            nuevoColegio.setEstado(true);
+            nuevoColegio.setPlan(planPremium);
+            log.info("Colegio de prueba creado por subdominio.");
+            return colegioRepository.save(nuevoColegio);
+        });
+
+        // 5. Crear Director si no existe y asociarlo correctamente al colegio
+        if (usuarioRepository.findByEmail("director@sanpedro.com").isEmpty()) {
+            RolEntity rolAdminColegio = rolRepository.findByNombre("ADMIN_COLEGIO").orElseThrow();
+            UsuarioEntity director = new UsuarioEntity();
+            director.setNombreCompleto("Director Prueba");
+            director.setEmail("director@sanpedro.com");
+            director.setPasswordHash(passwordEncoder.encode("Director123!"));
+            director.setColegio(colegio);
+            director.setRolEntity(rolAdminColegio);
+            director.setEstado(true);
+            usuarioRepository.save(director);
+            log.info("Cuenta de Director creada y vinculada.");
+        }
+
+        // 6. Crear Docente y su perfil asegurando la vinculación exacta al colegio
+        if (usuarioRepository.findByEmail("docente@sanpedro.com").isEmpty()) {
+            RolEntity rolDocente = rolRepository.findByNombre("DOCENTE").orElseThrow();
+
+            UsuarioEntity docenteUser = new UsuarioEntity();
+            docenteUser.setNombreCompleto("Profesor Prueba");
+            docenteUser.setEmail("docente@sanpedro.com");
+            docenteUser.setPasswordHash(passwordEncoder.encode("Docente123!"));
+            docenteUser.setColegio(colegio);
+            docenteUser.setRolEntity(rolDocente);
+            docenteUser.setEstado(true);
+            UsuarioEntity usuarioGuardado = usuarioRepository.save(docenteUser);
+
+            DocenteEntity docenteEntity = DocenteEntity.builder()
+                    .nombres("Profesor")
+                    .apellidos("Prueba")
+                    .documentoIdentidad("87654321")
+                    .email("docente@sanpedro.com")
+                    .especialidad("Matemáticas")
+                    .colegio(colegio)
+                    .usuarioEntity(usuarioGuardado)
+                    .estado(true)
+                    .build();
+
+            docenteRepository.save(docenteEntity);
+            log.info("Cuenta de Docente y perfil vinculados al colegio correctamente.");
         }
     }
 }

@@ -15,12 +15,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
 
-    private final UsuarioJpaRepository usuarioRepository;
+    private final UsuarioJpaRepository usuarioRepository; // Usamos este nombre único
     private final UsuarioMapper usuarioMapper;
 
     @Override
     public Usuario guardar(Usuario usuario) {
-        return save(usuario);
+        UsuarioEntity entity = usuarioMapper.toEntity(usuario);
+        UsuarioEntity savedEntity = usuarioRepository.save(entity);
+        return usuarioMapper.toDomain(savedEntity);
+    }
+
+    @Override
+    public Usuario save(Usuario usuario) {
+        return guardar(usuario); // Redirige al método unificado
     }
 
     @Override
@@ -29,15 +36,8 @@ public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
-    public Optional<Usuario> buscarPorId(UUID id) { // <-- Cambiado a UUID
+    public Optional<Usuario> buscarPorId(UUID id) {
         return usuarioRepository.findById(id).map(usuarioMapper::toDomain);
-    }
-
-    @Override
-    public Usuario save(Usuario usuario) {
-        UsuarioEntity entity = usuarioMapper.toEntity(usuario);
-        UsuarioEntity savedEntity = usuarioRepository.save(entity);
-        return usuarioMapper.toDomain(savedEntity);
     }
 
     @Override
@@ -53,7 +53,13 @@ public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
 
     @Override
     public Optional<Usuario> buscarPorEmailYColegio(String email, Long colegioId) {
-        return usuarioRepository.findByEmailAndColegioId(email, colegioId) // <--- Usa el nombre exacto de tu variable aquí
-                .map(usuarioMapper::toDomain); // Utiliza el mapeo que ya usas en tus otros métodos
+        return usuarioRepository.findByEmailAndColegioId(email, colegioId)
+                .map(usuarioMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Usuario> findByTokenActivacion(String token) {
+        return usuarioRepository.findByTokenActivacion(token)
+                .map(usuarioMapper::toDomain);
     }
 }

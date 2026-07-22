@@ -11,7 +11,7 @@ public record CalificacionRegistroDTO(
         Long cursoId,
 
         @NotNull(message = "El ID del docente es obligatorio")
-        Long docenteId,
+        String docenteId,
 
         @NotBlank(message = "El periodo es obligatorio")
         String periodo,

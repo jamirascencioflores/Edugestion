@@ -18,4 +18,8 @@ public class Usuario {
     private Boolean estado;
     private Boolean debeCambiarPassword;
     private LocalDateTime createdAt;
+
+    // Agrega estos campos para el flujo de invitación por correo
+    private String tokenActivacion;
+    private LocalDateTime tokenExpiracion;
 }

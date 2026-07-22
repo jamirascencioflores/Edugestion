@@ -44,9 +44,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long tokenColegioId = jwtAdapter.extraerColegioId(jwt);
             Long urlColegioId = (Long) request.getAttribute("tenant_colegio_id"); // Obtenido por el TenantResolverFilter
 
+            // RESPALDO DE SEGURIDAD: Si el filtro anterior no inyectó el ID pero el JWT sí lo tiene, lo rescatamos
+            if (urlColegioId == null && tokenColegioId != null) {
+                request.setAttribute("tenant_colegio_id", tokenColegioId);
+                urlColegioId = tokenColegioId;
+            }
+
             // SEGURIDAD DE ÉLITE: Evitar que usen un token de un colegio en otro subdominio
             if (tokenColegioId != null && urlColegioId != null && !tokenColegioId.equals(urlColegioId)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setCharacterEncoding("UTF-8");
                 response.getWriter().write("Acceso denegado: El token no pertenece a este colegio.");
                 return;
             }

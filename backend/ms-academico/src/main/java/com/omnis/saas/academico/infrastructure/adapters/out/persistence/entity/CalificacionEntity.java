@@ -7,6 +7,7 @@ import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "calificaciones")
@@ -31,7 +32,7 @@ public class CalificacionEntity {
     private Long cursoId;
 
     @Column(name = "docente_id", nullable = false)
-    private Long docenteId;
+    private String docenteId;
 
     @Column(nullable = false, length = 50)
     private String periodo;
@@ -44,4 +45,8 @@ public class CalificacionEntity {
 
     @Column(name = "fecha_registro", nullable = false)
     private LocalDate fechaRegistro;
+
+    private String modificadoPor; // Guardará el UUID del usuario
+
+    private LocalDateTime fechaModificacion;
 }

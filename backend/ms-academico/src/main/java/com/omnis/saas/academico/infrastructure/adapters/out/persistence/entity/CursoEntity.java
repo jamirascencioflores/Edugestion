@@ -1,4 +1,5 @@
 package com.omnis.saas.academico.infrastructure.adapters.out.persistence.entity;
+
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
@@ -18,6 +19,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CursoEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,4 +34,10 @@ public class CursoEntity {
 
     @Builder.Default
     private Boolean estado = true;
+
+    // --- NUEVA RELACIÓN ---
+    // Un curso pertenece a una sola Área (ej. "Matemática" pertenece a "Ciencias")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "area_id")
+    private AreaAcademicaEntity areaAcademica;
 }

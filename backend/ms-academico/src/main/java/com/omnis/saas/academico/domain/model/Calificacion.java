@@ -11,7 +11,7 @@ public class Calificacion {
     private Long colegioId;
     private Long estudianteId;
     private Long cursoId;
-    private Long docenteId;
+    private String docenteId;
     private String periodo; // Ej: BIMESTRE_1, TRIMESTRE_1, CICLO_1
     private String valor;   // Ej: "A", "AD", "15", "20"
     private String comentario;
