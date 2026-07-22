@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { calificacionApi } from "../../../api/calificacionApi";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../api/axiosConfig";
 import { Award, Lock } from "lucide-react";
@@ -10,7 +9,7 @@ import CalificacionesTable from "./CalificacionesTable";
 export default function RegistroCalificaciones() {
   const { user } = useAuth();
 
-  // Filtros y Cascada (Ahora incluye Grado)
+  // Filtros y Cascada
   const [gradoId, setGradoId] = useState("");
   const [seccionId, setSeccionId] = useState("");
   const [cursoId, setCursoId] = useState("");
@@ -30,6 +29,7 @@ export default function RegistroCalificaciones() {
 
   // Estado para lo que escribe actualmente el docente
   const [notasEditables, setNotasEditables] = useState({});
+  const [modoEdicion, setModoEdicion] = useState(false);
 
   // Manejadores para limpiar estados sin causar cascadas en los efectos
   const handleCambioGrado = (valor) => {
@@ -38,7 +38,11 @@ export default function RegistroCalificaciones() {
     setCursoId("");
     setSeccionesDisponibles(
       valor
-        ? allSecciones.filter((s) => s.gradoId?.toString() === valor.toString())
+        ? allSecciones.filter(
+            (s) =>
+              s.gradoId?.toString() === valor.toString() ||
+              s.grado?.id?.toString() === valor.toString(),
+          )
         : [],
     );
     setCursosDisponibles([]);
@@ -64,6 +68,28 @@ export default function RegistroCalificaciones() {
     }
   };
 
+  const handleEditar = () => {
+    setModoEdicion(true); // Activamos el modo edición
+    const notasPrecargadas = {};
+
+    alumnos.forEach((alumno) => {
+      const notaExistente = historialNotas.find(
+        (h) =>
+          h.estudianteId === alumno.id &&
+          h.periodo?.toString() === periodoId?.toString(),
+      );
+
+      if (notaExistente) {
+        notasPrecargadas[alumno.id] = {
+          valor: notaExistente.valor,
+          comentario: notaExistente.comentario || "",
+        };
+      }
+    });
+
+    setNotasEditables(notasPrecargadas);
+  };
+
   // Determinar si el periodo seleccionado es editable (Bloqueo de notas pasadas)
   const esPeriodoEditable = useMemo(() => {
     if (!periodoId) return false;
@@ -79,11 +105,11 @@ export default function RegistroCalificaciones() {
   // 1. Carga inicial: Catálogos de la institución y asignaciones del profesor logueado
   useEffect(() => {
     const inicializarSistema = async () => {
-      try {
-        // TODO: Verifica si '1' es un ID válido en tu tabla de docentes.
-        // Si usas UUIDs o textos, cámbialo temporalmente por el ID real de tu profesor de prueba, ej: "DOC-001"
-        const docenteId = "b0c6fded-7e1a-497f-a7db-2bee2275f322";
+      const docenteUuid = user?.userId;
+      if (!docenteUuid) return;
 
+      try {
+        // Quitamos /auth/docentes de aquí para evitar el 403 Forbidden
         const [
           resPeriodos,
           resGrados,
@@ -95,21 +121,12 @@ export default function RegistroCalificaciones() {
           api.get("/academicos/grados"),
           api.get("/academicos/secciones"),
           api.get("/academicos/cursos"),
-          api.get(`/academicos/asignaciones/docente/${docenteId}`),
+          api.get(`/academicos/asignaciones/docente/${docenteUuid}`),
         ]);
 
         const asignaciones = resAsignaciones.data || [];
         const secciones = resSecciones.data || [];
         const grados = resGrados.data || [];
-
-        // 🐛 DEBUG: Mira tu consola (F12) para ver si 'asignaciones' viene vacío
-        console.log(
-          "Asignaciones traídas para el docente",
-          docenteId,
-          ":",
-          asignaciones,
-        );
-        console.log("Secciones de la BD:", secciones);
 
         setPeriodosDisponibles(resPeriodos.data || []);
         setAllSecciones(secciones);
@@ -124,10 +141,11 @@ export default function RegistroCalificaciones() {
           uniqueSeccionIds.map(String).includes(String(s.id)),
         );
 
-        // Extraer Grados (¡Mejora aquí! Soporta tanto s.gradoId como s.grado.id)
+        // Extraer Grados
         const uniqueGradoIds = [
           ...new Set(seccionesAsignadas.map((s) => s.gradoId || s.grado?.id)),
         ];
+
         setGradosDisponibles(
           grados.filter((g) =>
             uniqueGradoIds.map(String).includes(String(g.id)),
@@ -148,7 +166,9 @@ export default function RegistroCalificaciones() {
       }
     };
 
-    inicializarSistema();
+    if (user?.userId) {
+      inicializarSistema();
+    }
   }, [user]);
 
   // 2. Cascada: Al cambiar de Aula, cargamos sus alumnos y filtramos los cursos que dicta allí
@@ -211,41 +231,62 @@ export default function RegistroCalificaciones() {
     }));
   };
 
-  const handleGuardarNota = async (estudianteId) => {
-    if (!esPeriodoEditable)
-      return toast.error("Periodo bloqueado por administración.");
+  const handleGuardarTodo = async () => {
+    // 1. Construir la lista completa
+    const notasProcesadas = alumnos.map((alumno) => {
+      const notaEditada = notasEditables[alumno.id];
+      const notaHistorica = historialNotas.find(
+        (h) =>
+          h.estudianteId === alumno.id &&
+          h.periodo?.toString() === periodoId?.toString(),
+      );
 
-    const cambioInput = notasEditables[estudianteId];
-    if (!cursoId || !periodoId)
-      return toast.error("Faltan parámetros de selección");
-    if (!cambioInput?.valor)
-      return toast.error("La calificación no puede estar vacía");
+      return {
+        estudianteId: Number(alumno.id),
+        cursoId: Number(cursoId),
+        docenteId: user?.userId,
+        periodo: String(periodoId),
+        valor: (notaEditada?.valor !== undefined
+          ? notaEditada.valor
+          : notaHistorica?.valor || ""
+        )
+          .toUpperCase()
+          .trim(),
+        comentario:
+          notaEditada?.comentario !== undefined
+            ? notaEditada.comentario
+            : notaHistorica?.comentario || "",
+      };
+    });
+
+    // 2. Separar las que tienen nota de las vacías
+    const notasParaGuardar = notasProcesadas.filter((n) => n.valor !== "");
+    const cantidadFaltantes = notasProcesadas.length - notasParaGuardar.length;
+
+    if (notasParaGuardar.length === 0) {
+      return toast.error("No hay ninguna calificación válida para guardar");
+    }
 
     try {
-      await calificacionApi.registrar({
-        estudianteId,
-        cursoId: Number(cursoId),
-        docenteId: user?.id || 1,
-        periodo: periodoId,
-        valor: cambioInput.valor.toUpperCase().trim(),
-        comentario: cambioInput.comentario || "",
-      });
+      await api.post("/academicos/calificaciones/masivo", notasParaGuardar);
 
-      toast.success("Nota almacenada correctamente");
+      if (cantidadFaltantes > 0) {
+        toast.warning(
+          `Se guardaron ${notasParaGuardar.length} notas. Faltan ${cantidadFaltantes} estudiantes por calificar.`,
+        );
+      } else {
+        toast.success("Todas las notas fueron guardadas correctamente");
+      }
 
       const resNotas = await api.get(
         `/academicos/calificaciones/curso/${cursoId}/todos`,
       );
       setHistorialNotas(resNotas.data || []);
-
-      setNotasEditables((prev) => {
-        const copia = { ...prev };
-        delete copia[estudianteId];
-        return copia;
-      });
+      setNotasEditables({});
+      setModoEdicion(false); // Desactivamos el modo edición
     } catch (error) {
       console.error(error);
-      toast.error("Error crítico de persistencia");
+      toast.error("Error al guardar las notas");
     }
   };
 
@@ -300,7 +341,9 @@ export default function RegistroCalificaciones() {
           historialNotas={historialNotas}
           notasEditables={notasEditables}
           onNotaChange={handleNotaChange}
-          onGuardar={handleGuardarNota}
+          onGuardar={handleGuardarTodo}
+          onEditar={handleEditar}
+          modoEdicion={modoEdicion}
         />
       </div>
     </div>

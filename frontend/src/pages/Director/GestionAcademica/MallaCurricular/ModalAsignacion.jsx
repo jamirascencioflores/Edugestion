@@ -10,6 +10,7 @@ export default function ModalAsignacion({
   cursos,
   docentes,
   asignacion,
+  asignaciones = [], // <-- Añadido para validar existencia
 }) {
   const [formData, setFormData] = useState({
     id: asignacion?.id || null,
@@ -19,14 +20,12 @@ export default function ModalAsignacion({
     estado: asignacion ? asignacion.estado : true,
   });
 
-  // 1. Guardamos una copia exacta de cómo iniciaron los datos
   const [initialData] = useState({ ...formData });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 2. Validación: Si no hay ningún cambio, cerramos sin hacer la petición
     if (JSON.stringify(formData) === JSON.stringify(initialData)) {
       toast.info("No se detectaron cambios");
       onClose();
@@ -35,12 +34,24 @@ export default function ModalAsignacion({
 
     setLoading(true);
     try {
-      await api.post("/academicos/asignaciones", formData);
-      toast.success(
-        asignacion
-          ? "Asignación actualizada con éxito"
-          : "Curso asignado correctamente",
+      // 1. Buscamos si ya existe una asignación para este curso en la sección
+      const asignacionExistente = asignaciones.find(
+        (a) => a.cursoId === formData.cursoId,
       );
+
+      // Usamos el ID de la asignación existente (si se intentó crear uno duplicado) o el que viene por prop al editar
+      const idActualizar = asignacionExistente?.id || formData.id;
+
+      if (idActualizar) {
+        // 2. Si existe, actualizamos usando PUT
+        await api.put(`/academicos/asignaciones/${idActualizar}`, formData);
+        toast.success("Asignación actualizada con éxito");
+      } else {
+        // 3. Si no existe, creamos con POST
+        await api.post("/academicos/asignaciones", formData);
+        toast.success("Curso asignado correctamente");
+      }
+
       onSuccess();
       onClose();
     } catch {
@@ -66,7 +77,6 @@ export default function ModalAsignacion({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* 1. SELECT DE CURSO (Mantiene cursoId y Number) */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Curso
@@ -89,8 +99,6 @@ export default function ModalAsignacion({
             </select>
           </div>
 
-          {/* 2. SELECT DE DOCENTE (Usa docenteId y NO lleva Number porque es UUID) */}
-          {/* Fíjate en el value del option */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Docente Dictante

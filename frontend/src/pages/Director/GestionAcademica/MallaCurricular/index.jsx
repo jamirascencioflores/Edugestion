@@ -180,6 +180,7 @@ export default function MallaCurricular() {
           cursos={cursos}
           docentes={docentes}
           asignacion={asignacionEdit}
+          asignaciones={asignaciones} // <-- AÑADE ESTA LÍNEA
         />
       )}
     </div>

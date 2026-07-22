@@ -1,4 +1,4 @@
-import { Save } from "lucide-react";
+import { Save, Edit } from "lucide-react";
 
 export default function CalificacionesTable({
   alumnos,
@@ -9,8 +9,9 @@ export default function CalificacionesTable({
   notasEditables,
   onNotaChange,
   onGuardar,
+  onEditar,
+  modoEdicion,
 }) {
-  // Función inteligente para calcular promedios (Soporta numérico 0-20 y literales peruanos AD-C)
   const obtenerPromedioHtml = (alumnoId) => {
     const notasDefinitivas = periodos
       .map((p) => {
@@ -63,7 +64,6 @@ export default function CalificacionesTable({
         <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
           <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
             <tr>
-              {/* 2. Actualizado a min-w-60 */}
               <th className="px-6 py-4 font-medium min-w-60">Estudiante</th>
               {periodos.map((p) => (
                 <th
@@ -76,102 +76,141 @@ export default function CalificacionesTable({
               <th className="px-4 py-4 font-medium text-center w-24 bg-slate-100/50 dark:bg-slate-900/30">
                 PROM
               </th>
-              {/* 3. Actualizado a min-w-50 */}
               <th className="px-6 py-4 font-medium min-w-50">
                 Observaciones (Periodo Activo)
               </th>
-              <th className="px-6 py-4 font-medium w-24 text-center">Acción</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {alumnos.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4 + periodos.length}
+                  colSpan={3 + periodos.length}
                   className="px-6 py-8 text-center text-slate-400"
                 >
                   No hay alumnos cargados o no has seleccionado un aula.
                 </td>
               </tr>
             ) : (
-              alumnos.map((alumno) => (
-                <tr
-                  key={alumno.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                >
-                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                    {alumno.apellidos}, {alumno.nombres}
-                  </td>
+              alumnos.map((alumno) => {
+                // Buscamos la nota histórica del periodo activo para las observaciones
+                const notaHistoricaActiva = historialNotas.find(
+                  (h) =>
+                    h.estudianteId === alumno.id &&
+                    h.periodo?.toString() === periodoActivo?.toString(),
+                );
 
-                  {/* Columnas dinámicas de periodos */}
-                  {periodos.map((p) => {
-                    const esPeriodoEditable =
-                      p.id?.toString() === periodoActivo?.toString();
-                    const notaHistorica = historialNotas.find(
-                      (h) =>
-                        h.estudianteId === alumno.id &&
-                        h.periodo?.toString() === p.id?.toString(),
-                    );
+                return (
+                  <tr
+                    key={alumno.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                      {alumno.apellidos}, {alumno.nombres}
+                    </td>
 
-                    return (
-                      <td key={p.id} className="px-2 py-2 text-center">
-                        {esPeriodoEditable ? (
-                          <input
-                            type="text"
-                            maxLength={3}
-                            placeholder={notaHistorica?.valor || "AD / 20"}
-                            className="w-20 mx-auto border border-slate-200 dark:border-slate-600 rounded-lg p-2 bg-slate-50 dark:bg-slate-900 text-center font-bold text-slate-800 dark:text-slate-100 uppercase focus:ring-2 focus:ring-slate-400/20 outline-none transition-all placeholder:font-normal placeholder:text-slate-400"
-                            value={notasEditables[alumno.id]?.valor || ""}
-                            onChange={(e) =>
-                              onNotaChange(alumno.id, "valor", e.target.value)
-                            }
-                          />
-                        ) : (
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            {notaHistorica ? notaHistorica.valor : "-"}
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
+                    {periodos.map((p) => {
+                      const esPeriodoEditable =
+                        p.id?.toString() === periodoActivo?.toString();
+                      const notaHistorica = historialNotas.find(
+                        (h) =>
+                          h.estudianteId === alumno.id &&
+                          h.periodo?.toString() === p.id?.toString(),
+                      );
 
-                  {/* Columna de Promedios */}
-                  <td className="px-2 py-2 text-center bg-slate-100/30 dark:bg-slate-900/10 font-bold">
-                    {obtenerPromedioHtml(alumno.id)}
-                  </td>
+                      const valorInput =
+                        notasEditables[alumno.id]?.valor !== undefined
+                          ? notasEditables[alumno.id].valor
+                          : notaHistorica?.valor || "";
 
-                  {/* Observaciones del periodo editable */}
-                  <td className="px-4 py-2">
-                    <input
-                      type="text"
-                      placeholder="Comentario opcional..."
-                      className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2 bg-transparent text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-slate-400/20 outline-none transition-all placeholder:text-slate-400 disabled:opacity-50"
-                      value={notasEditables[alumno.id]?.comentario || ""}
-                      onChange={(e) =>
-                        onNotaChange(alumno.id, "comentario", e.target.value)
-                      }
-                      disabled={!periodoActivo}
-                    />
-                  </td>
+                      const estaVacio = valorInput.trim() === "";
 
-                  {/* Botón de guardar */}
-                  <td className="px-6 py-2 text-center">
-                    <button
-                      onClick={() => onGuardar(alumno.id)}
-                      className="inline-flex items-center justify-center p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-all shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 disabled:opacity-40 disabled:hover:scale-100"
-                      style={{ color: "var(--color-primary)" }}
-                      disabled={!periodoActivo || !cursoId}
-                      title="Guardar calificación"
-                    >
-                      <Save size={18} strokeWidth={2.5} />
-                    </button>
-                  </td>
-                </tr>
-              ))
+                      // LÓGICA DE BLOQUEO
+                      const tieneNotaGuardada = notaHistorica !== undefined;
+                      const mostrarInput =
+                        esPeriodoEditable &&
+                        (!tieneNotaGuardada || modoEdicion);
+
+                      return (
+                        <td key={p.id} className="px-2 py-2 text-center">
+                          {mostrarInput ? (
+                            <input
+                              type="text"
+                              maxLength={3}
+                              placeholder={notaHistorica?.valor || "AD/20"}
+                              className={`w-20 mx-auto border rounded-lg p-2 text-center font-bold uppercase focus:ring-2 focus:ring-slate-400/20 outline-none transition-all placeholder:font-normal
+                                ${
+                                  estaVacio
+                                    ? "border-red-400 bg-red-50 text-red-700 placeholder:text-red-300 dark:bg-red-900/20 dark:border-red-500/50 dark:text-red-400"
+                                    : "border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                                }`}
+                              value={valorInput}
+                              onChange={(e) =>
+                                onNotaChange(alumno.id, "valor", e.target.value)
+                              }
+                            />
+                          ) : (
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              {notaHistorica ? notaHistorica.valor : "-"}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+
+                    <td className="px-2 py-2 text-center bg-slate-100/30 dark:bg-slate-900/10 font-bold">
+                      {obtenerPromedioHtml(alumno.id)}
+                    </td>
+
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        placeholder="Comentario opcional..."
+                        className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2 bg-transparent text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-slate-400/20 outline-none transition-all placeholder:text-slate-400 disabled:opacity-50"
+                        value={
+                          notasEditables[alumno.id]?.comentario !== undefined
+                            ? notasEditables[alumno.id].comentario
+                            : notaHistoricaActiva?.comentario || ""
+                        }
+                        onChange={(e) =>
+                          onNotaChange(alumno.id, "comentario", e.target.value)
+                        }
+                        disabled={
+                          !periodoActivo ||
+                          (notaHistoricaActiva && !modoEdicion)
+                        }
+                      />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Controles Generales */}
+      {alumnos.length > 0 && (
+        <div className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-end gap-3">
+          <button
+            onClick={onEditar}
+            disabled={!periodoActivo || modoEdicion} // <-- Añadir modoEdicion
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+          >
+            <Edit size={16} />
+            Editar Notas
+          </button>
+
+          <button
+            onClick={onGuardar}
+            disabled={!periodoActivo || !cursoId}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm"
+          >
+            <Save size={16} />
+            Guardar Todo
+          </button>
+        </div>
+      )}
     </div>
   );
 }

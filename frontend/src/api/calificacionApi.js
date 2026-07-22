@@ -3,7 +3,7 @@ import api from "./axiosConfig";
 export const calificacionApi = {
   registrar: async (calificacionData) => {
     const response = await api.post(
-      "/academicos/calificaciones", 
+      "/academicos/calificaciones",
       calificacionData,
     );
     return response.data;
@@ -11,9 +11,20 @@ export const calificacionApi = {
 
   listarPorCurso: async (cursoId, periodo) => {
     const response = await api.get(
-      `/academicos/calificaciones/curso/${cursoId}`, 
+      `/academicos/calificaciones/curso/${cursoId}`,
       {
         params: { periodo },
+      },
+    );
+    return response.data;
+  },
+
+  descargarBoleta: async (estudianteId, periodo) => {
+    const response = await api.get(
+      `/academicos/calificaciones/estudiante/${estudianteId}/boleta/pdf`,
+      {
+        params: { periodo },
+        responseType: "blob", // Crucial para recibir el PDF
       },
     );
     return response.data;
