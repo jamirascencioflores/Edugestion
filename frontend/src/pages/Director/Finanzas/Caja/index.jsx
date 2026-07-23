@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Search, CreditCard, User, AlertCircle } from "lucide-react";
+import { Search, CreditCard, User, AlertCircle, History } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 import TablaDeudas from "./TablaDeudas";
+import ModalPago from "../Pagos/ModalPago";
+import ModalHistorial from "../Pagos/ModalHistorial";
 import Swal from "sweetalert2";
 
 export default function CajaIndex() {
@@ -12,7 +14,11 @@ export default function CajaIndex() {
   const [deudas, setDeudas] = useState([]);
   const [loadingDeudas, setLoadingDeudas] = useState(false);
 
-  // Cargamos los estudiantes una sola vez para búsqueda rápida en memoria (MVP)
+  // Estados para los modales
+  const [openModalPago, setOpenModalPago] = useState(false);
+  const [openModalHistorial, setOpenModalHistorial] = useState(false);
+  const [deudaSeleccionada, setDeudaSeleccionada] = useState(null);
+
   useEffect(() => {
     const fetchEstudiantes = async () => {
       try {
@@ -25,7 +31,6 @@ export default function CajaIndex() {
     fetchEstudiantes();
   }, []);
 
-  // Filtro de búsqueda (DNI o Nombres), limitado a 5 resultados
   const resultadosBusqueda =
     busqueda.trim() === ""
       ? []
@@ -57,32 +62,23 @@ export default function CajaIndex() {
     }
   };
 
-  const registrarPago = async (deuda) => {
-    const { value: numeroOp, isConfirmed } = await Swal.fire({
-      title: "¿Confirmar cobro?",
-      html: `
-        <p class="mb-4 text-sm text-slate-600">Se registrará el pago de <b>S/ ${Number(deuda.monto).toFixed(2)}</b>.</p>
-        <input id="num-operacion" class="swal2-input !mt-0 !text-sm" placeholder="N° de Operación (Opcional, ej: Yape/Plin)" style="width: 80%;">
-      `,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "var(--color-primary)",
-      cancelButtonColor: "#ef4444",
-      confirmButtonText: "Sí, cobrar",
-      cancelButtonText: "Cancelar",
-      preConfirm: () => document.getElementById("num-operacion").value,
-    });
+  const abrirModalPago = (deuda) => {
+    setDeudaSeleccionada(deuda);
+    setOpenModalPago(true);
+  };
 
-    if (isConfirmed) {
-      try {
-        await api.put(`/finanzas/deudas/${deuda.id}/pagar`, {
-          numeroOperacion: numeroOp,
-        });
-        toast.success("Pago registrado correctamente");
-        await cargarDeudas(estudianteSeleccionado.id);
-      } catch {
-        toast.error("Error al procesar el pago");
-      }
+  const handleConfirmarPago = async ({ metodoPago, numeroOperacion }) => {
+    try {
+      await api.put(`/finanzas/deudas/${deudaSeleccionada.id}/pagar`, {
+        metodoPago,
+        numeroOperacion,
+      });
+      toast.success("Pago registrado correctamente");
+      setOpenModalPago(false);
+      setDeudaSeleccionada(null);
+      await cargarDeudas(estudianteSeleccionado.id);
+    } catch {
+      toast.error("Error al procesar el pago");
     }
   };
 
@@ -93,7 +89,7 @@ export default function CajaIndex() {
       input: "text",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444", // Botón rojo por ser acción destructiva
+      confirmButtonColor: "#ef4444",
       cancelButtonColor: "#64748b",
       confirmButtonText: "Sí, revertir",
       cancelButtonText: "Cancelar",
@@ -149,7 +145,6 @@ export default function CajaIndex() {
               />
             </div>
 
-            {/* Resultados flotantes */}
             {resultadosBusqueda.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden left-0">
                 {resultadosBusqueda.map((est) => (
@@ -179,29 +174,40 @@ export default function CajaIndex() {
               </h3>
               <div className="space-y-3 text-sm">
                 <p>
-                  <span className="text-slate-500">Nombres:</span> <br />{" "}
+                  <span className="text-slate-500">Nombres:</span> <br />
                   <span className="font-medium dark:text-slate-300">
                     {estudianteSeleccionado.nombres}
                   </span>
                 </p>
                 <p>
-                  <span className="text-slate-500">Apellidos:</span> <br />{" "}
+                  <span className="text-slate-500">Apellidos:</span> <br />
                   <span className="font-medium dark:text-slate-300">
                     {estudianteSeleccionado.apellidos}
                   </span>
                 </p>
                 <p>
-                  <span className="text-slate-500">DNI:</span> <br />{" "}
+                  <span className="text-slate-500">DNI:</span> <br />
                   <span className="font-medium dark:text-slate-300">
                     {estudianteSeleccionado.dni}
                   </span>
                 </p>
               </div>
+
+              {/* Botón de Historial */}
+              <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={() => setOpenModalHistorial(true)}
+                  className="w-full flex items-center justify-center gap-2 border-2 border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white py-2 px-4 rounded-lg transition-colors font-medium text-sm"
+                >
+                  <History size={16} />
+                  Ver Historial de Caja
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* PANEL DERECHO: Estado de Cuenta (Tabla de Deudas) */}
+        {/* PANEL DERECHO: Estado de Cuenta */}
         <div className="lg:col-span-2">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden min-h-[400px] flex flex-col">
             <div className="p-5 border-b border-slate-200 dark:border-slate-700">
@@ -231,7 +237,7 @@ export default function CajaIndex() {
               ) : (
                 <TablaDeudas
                   deudas={deudas}
-                  onPagar={registrarPago}
+                  onPagar={abrirModalPago} // Llamamos al modal en lugar de Swal
                   onRevertir={revertirPago}
                 />
               )}
@@ -239,6 +245,22 @@ export default function CajaIndex() {
           </div>
         </div>
       </div>
+
+      {/* Componentes Modales */}
+      <ModalPago
+        isOpen={openModalPago}
+        onClose={() => {
+          setOpenModalPago(false);
+          setDeudaSeleccionada(null);
+        }}
+        onConfirmarPago={handleConfirmarPago}
+      />
+
+      <ModalHistorial
+        isOpen={openModalHistorial}
+        onClose={() => setOpenModalHistorial(false)}
+        estudianteId={estudianteSeleccionado?.id}
+      />
     </div>
   );
 }
