@@ -20,10 +20,11 @@ public class UsuarioMapper {
                 .email(entity.getEmail())
                 .passwordHash(entity.getPasswordHash())
                 .colegio(colegioMapper.toDomain(entity.getColegio()))
-                .rol(rolMapper.toDomain(entity.getRolEntity())) // Ajusta el nombre si cambió a rolEntity
+                .rol(rolMapper.toDomain(entity.getRolEntity()))
                 .estado(entity.getEstado())
                 .debeCambiarPassword(entity.getDebeCambiarPassword())
                 .createdAt(entity.getCreatedAt())
+                .tokenActivacion(entity.getTokenActivacion()) // <-- Añadido
                 .build();
     }
 
@@ -35,10 +36,11 @@ public class UsuarioMapper {
         entity.setEmail(domain.getEmail());
         entity.setPasswordHash(domain.getPasswordHash());
         entity.setColegio(colegioMapper.toEntity(domain.getColegio()));
-        entity.setRolEntity(rolMapper.toEntity(domain.getRol())); // Ajusta el nombre si cambió a rolEntity
+        entity.setRolEntity(rolMapper.toEntity(domain.getRol()));
         entity.setEstado(domain.getEstado());
         entity.setDebeCambiarPassword(domain.getDebeCambiarPassword());
         entity.setCreatedAt(domain.getCreatedAt());
+        entity.setTokenActivacion(domain.getTokenActivacion()); // <-- Añadido
         return entity;
     }
 }

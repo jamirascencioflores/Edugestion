@@ -5,6 +5,7 @@ import com.omnis.saas.auth.domain.ports.in.UsuarioUseCase;
 import com.omnis.saas.auth.domain.ports.out.RolRepositoryPort;
 import com.omnis.saas.auth.domain.ports.out.TokenProviderPort;
 import com.omnis.saas.auth.domain.ports.out.UsuarioRepositoryPort;
+import com.omnis.saas.auth.domain.ports.out.EmailServicePort;
 import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.AuthResponseDTO;
 import com.omnis.saas.auth.domain.model.Usuario;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class UsuarioServiceImpl implements UsuarioUseCase {
 
     private final UsuarioRepositoryPort usuarioRepositoryPort;
-    private final RolRepositoryPort rolRepositoryPort; // <-- Nuevo puerto inyectado
+    private final RolRepositoryPort rolRepositoryPort;
     private final TokenProviderPort tokenProviderPort;
     private final PasswordEncoder passwordEncoder;
+    private final EmailServicePort emailServicePort;
 
     @Override
     public Usuario registrarNuevoUsuario(Usuario usuario, String nombreRol) {
@@ -27,12 +29,31 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
             throw new RuntimeException("El email ya está registrado");
         }
 
-        // Buscamos y asignamos el rol usando la constante
         Rol rolAsignado = rolRepositoryPort.findByNombre(nombreRol)
                 .orElseThrow(() -> new RuntimeException("Rol no configurado en el sistema"));
 
         usuario.setRol(rolAsignado);
-        return usuarioRepositoryPort.guardar(usuario);
+
+        // 1. Asignar hash temporal para cumplir el constraint de la BD
+        if (usuario.getPasswordHash() == null) {
+            usuario.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+        }
+
+        // 2. Generar y asignar el token de activación
+        String tokenActivacion = java.util.UUID.randomUUID().toString();
+        usuario.setTokenActivacion(tokenActivacion);
+
+        // 3. Guardar en BD
+        Usuario usuarioGuardado = usuarioRepositoryPort.guardar(usuario);
+
+        // 4. Enviar correo de invitación
+        emailServicePort.enviarInvitacion(
+                usuarioGuardado.getEmail(),
+                usuarioGuardado.getNombreCompleto(),
+                tokenActivacion
+        );
+
+        return usuarioGuardado;
     }
 
     @Override
@@ -43,14 +64,13 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
 
     @Override
     public AuthResponseDTO login(String email, String password, Long colegioId) {
-        Usuario usuario;
+        Usuario usuario = usuarioRepositoryPort.buscarPorEmail(email)
+                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
 
-        if (colegioId != null) {
-            usuario = usuarioRepositoryPort.buscarPorEmailYColegio(email, colegioId)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado en este colegio"));
-        } else {
-            usuario = usuarioRepositoryPort.buscarPorEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+        if (usuario.getColegio() != null && colegioId != null) {
+            if (!usuario.getColegio().getId().equals(colegioId)) {
+                throw new RuntimeException("Usuario no pertenece a este colegio");
+            }
         }
 
         if (!passwordEncoder.matches(password, usuario.getPasswordHash())) {
@@ -58,7 +78,10 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
         }
 
         String token = tokenProviderPort.generarToken(usuario);
-        return new AuthResponseDTO(token, usuario.getDebeCambiarPassword() != null ? usuario.getDebeCambiarPassword() : false);
+        return new AuthResponseDTO(
+                token,
+                usuario.getDebeCambiarPassword() != null ? usuario.getDebeCambiarPassword() : false
+        );
     }
 
     @Override
@@ -75,19 +98,14 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
     @Override
     @Transactional
     public void activarCuentaConToken(String token, String nuevaPassword) {
-        // 1. Buscar el usuario por el token de activación
         Usuario usuario = usuarioRepositoryPort.findByTokenActivacion(token)
                 .orElseThrow(() -> new RuntimeException("El enlace de activación es inválido o ha expirado."));
 
-        // 2. Encriptar y actualizar la contraseña
         usuario.setPasswordHash(passwordEncoder.encode(nuevaPassword));
-
-        // 3. Limpiar el token, activar el estado y quitar la obligación de cambio temporal
         usuario.setTokenActivacion(null);
         usuario.setEstado(true);
         usuario.setDebeCambiarPassword(false);
 
-        // 4. Guardar cambios
         usuarioRepositoryPort.guardar(usuario);
     }
 }

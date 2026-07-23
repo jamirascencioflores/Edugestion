@@ -36,7 +36,7 @@ export default function SetupPassword() {
     setLoading(true);
     try {
       // Llamada al endpoint público de activación pasándole el token y la nueva clave
-      await api.post("/auth/public/activar-cuenta", {
+      await api.post("/auth/usuarios/public/activar-cuenta", {
         token: token,
         nuevaPassword: password,
       });

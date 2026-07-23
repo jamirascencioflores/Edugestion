@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="BoletaNotas" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b1a2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d">
+
+    <!-- Parámetros que coinciden con tu ReporteServiceImpl -->
+    <parameter name="ESTUDIANTE_NOMBRE" class="java.lang.String"/>
+    <parameter name="GRADO_SECCION" class="java.lang.String"/>
+    <parameter name="PERIODO" class="java.lang.String"/>
+
+    <title>
+        <band height="50">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="30" uuid="12345678-1234-1234-1234-123456789012"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="18" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Boleta de Notas - EduGestión"]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <pageHeader>
+        <band height="80">
+            <textField>
+                <reportElement x="0" y="10" width="400" height="20" uuid="abcdef12-3456-7890-abcd-ef1234567890"/>
+                <textElement>
+                    <font size="12"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Estudiante: " + $P{ESTUDIANTE_NOMBRE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="30" width="400" height="20" uuid="23456789-abcd-ef12-3456-7890abcdef12"/>
+                <textElement>
+                    <font size="12"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Grado y Sección: " + $P{GRADO_SECCION}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="50" width="400" height="20" uuid="34567890-bcde-fa12-4567-890abcdef123"/>
+                <textElement>
+                    <font size="12"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Periodo: " + $P{PERIODO}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageHeader>
+
+    <detail>
+        <band height="30">
+            <staticText>
+                <reportElement x="0" y="0" width="555" height="30" uuid="45678901-cdef-ab12-5678-90abcdef1234"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="12" isItalic="true"/>
+                </textElement>
+                <text><![CDATA[(Aquí se renderizará la tabla de calificaciones próximamente)]]></text>
+            </staticText>
+        </band>
+    </detail>
+
+</jasperReport>

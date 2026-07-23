@@ -2,9 +2,11 @@ package com.omnis.saas.finanzas.application.service;
 
 import com.omnis.saas.finanzas.domain.model.Deuda;
 import com.omnis.saas.finanzas.domain.model.EstadoDeuda;
+import com.omnis.saas.finanzas.domain.model.HistorialPago;
 import com.omnis.saas.finanzas.domain.model.Tarifario;
 import com.omnis.saas.finanzas.domain.ports.in.DeudaUseCase;
 import com.omnis.saas.finanzas.domain.ports.out.DeudaRepositoryPort;
+import com.omnis.saas.finanzas.domain.ports.out.HistorialPagoRepositoryPort;
 import com.omnis.saas.finanzas.domain.ports.out.TarifarioRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class DeudaServiceImpl implements DeudaUseCase {
 
     private final DeudaRepositoryPort deudaRepository;
     private final TarifarioRepositoryPort tarifarioRepository;
+    private final HistorialPagoRepositoryPort historialPagoPort; // 👈 Inyectado para auditoría
 
     private static final String[] MESES = {"Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
 
@@ -73,13 +76,17 @@ public class DeudaServiceImpl implements DeudaUseCase {
 
     @Override
     @Transactional
-    public void pagarDeuda(Long id, String numeroOperacion) {
+    public void pagarDeuda(Long id, String metodoPago, String numeroOperacion) {
         Deuda deuda = deudaRepository.buscarPorId(id)
                 .orElseThrow(() -> new RuntimeException("Deuda no encontrada"));
 
         deuda.setEstado(EstadoDeuda.PAGADA);
-        deuda.setNumeroOperacion(numeroOperacion);
+        // Si tienes el campo en tu entidad Deuda, ideal. Si no, puedes concatenarlo en numeroOperacion
+        deuda.setNumeroOperacion(metodoPago + " - " + numeroOperacion);
         deudaRepository.guardar(deuda);
+
+        String detalle = String.format("Pago vía %s. N° Op: %s", metodoPago, numeroOperacion);
+        registrarHistorial(deuda, "COBRO", detalle);
     }
 
     @Override
@@ -96,9 +103,11 @@ public class DeudaServiceImpl implements DeudaUseCase {
         deuda.setNumeroOperacion(null);
         deuda.setMotivoReversion(motivo);
         deudaRepository.guardar(deuda);
+
+        // 👇 Registrar la reversión en el historial
+        registrarHistorial(deuda, "REVERSIÓN", motivo);
     }
 
-    // 👇 Implementación del nuevo método requerido por la interfaz
     @Override
     @Transactional
     public void anularCuotasPendientes(Long colegioId, Long estudianteId) {
@@ -123,5 +132,18 @@ public class DeudaServiceImpl implements DeudaUseCase {
         });
 
         deudaRepository.saveAll(anuladas);
+    }
+
+    // 👇 Método auxiliar privado para registrar el movimiento
+    private void registrarHistorial(Deuda deuda, String tipoOperacion, String motivo) {
+        HistorialPago historial = HistorialPago.builder()
+                .deudaId(deuda.getId())
+                .estudianteId(deuda.getEstudianteId())
+                .colegioId(deuda.getColegioId())
+                .tipoOperacion(tipoOperacion)
+                .motivo(motivo)
+                .build();
+
+        historialPagoPort.guardar(historial);
     }
 }

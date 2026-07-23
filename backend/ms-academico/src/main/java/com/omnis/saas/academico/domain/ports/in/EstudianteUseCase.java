@@ -7,7 +7,8 @@ import java.util.List;
 public interface EstudianteUseCase {
     Estudiante registrar(Estudiante estudiante, Long gradoId, Integer anioEscolar);
     List<Estudiante> listar();
-    Estudiante actualizar(Long id, EstudianteActualizarDTO dto, Long colegioId); // 👈 Nuevo
-    void eliminar(Long id, Long colegioId); // 👈 Nuevo
+    Estudiante actualizar(Long id, EstudianteActualizarDTO dto, Long colegioId);
+    void eliminar(Long id, Long colegioId);
     List<Estudiante> listarPorSeccion(Long seccionId);
+    Estudiante buscarPorId(Long id); // 👈 Añadido para el Feign Client
 }

@@ -9,8 +9,7 @@ public interface DeudaUseCase {
     void anularDeuda(Long colegioId, Long deudaId);
 
     // Método de cobro actualizado (acepta numeroOperacion nulo)
-    void pagarDeuda(Long deudaId, String numeroOperacion);
-
+    void pagarDeuda(Long id, String metodoPago, String numeroOperacion);
     // Método de reversión
     void revertirPago(Long deudaId, String motivo);
 

@@ -85,4 +85,12 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
     public List<Estudiante> listarPorSeccion(Long seccionId) {
         return repositoryPort.buscarPorSeccion(seccionId);
     }
+
+    // 👇 MÉTODO AÑADIDO PARA SOPORTAR FEIGN
+    @Transactional(readOnly = true)
+    @Override
+    public Estudiante buscarPorId(Long id) {
+        return repositoryPort.buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con ID: " + id));
+    }
 }

@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/usuarios/registro", "/api/auth/usuarios/login").permitAll()
+                        .requestMatchers("/api/auth/usuarios/registro", "/api/auth/usuarios/login", "/api/auth/usuarios/public/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // 👇 NUEVO: Permiso específico para listar docentes

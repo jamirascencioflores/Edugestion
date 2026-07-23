@@ -27,6 +27,7 @@ public class EstudianteController {
     public ResponseEntity<?> listar() {
         return ResponseEntity.ok(service.listar());
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody EstudianteActualizarDTO dto) {
         Long colegioId = TenantContext.getColegioId();
@@ -43,5 +44,11 @@ public class EstudianteController {
     @GetMapping("/seccion/{seccionId}")
     public ResponseEntity<?> listarPorSeccion(@PathVariable Long seccionId) {
         return ResponseEntity.ok(service.listarPorSeccion(seccionId));
+    }
+
+    // 👇 NUEVO ENDPOINT PARA FEIGN
+    @GetMapping("/{id}/nombre")
+    public ResponseEntity<String> obtenerNombreEstudiante(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarPorId(id).getNombreCompleto());
     }
 }

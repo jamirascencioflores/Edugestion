@@ -49,17 +49,25 @@ public class DeudaController {
         return ResponseEntity.noContent().build();
     }
 
-    // 1. Endpoint actualizado para cobrar
+    // 3. Endpoint actualizado para cobrar con Método de Pago y N° de Operación
     @PutMapping("/{id}/pagar")
-    public ResponseEntity<Void> pagarDeuda(@PathVariable Long id, @RequestBody(required = false) PagoRequest request) {
+    public ResponseEntity<Void> pagarDeuda(
+            @PathVariable Long id,
+            @RequestBody(required = false) PagoRequest request) {
+
+        String metodoPago = (request != null && request.metodoPago() != null) ? request.metodoPago() : "Efectivo";
         String numeroOp = (request != null) ? request.numeroOperacion() : null;
-        deudaUseCase.pagarDeuda(id, numeroOp);
+
+        deudaUseCase.pagarDeuda(id, metodoPago, numeroOp);
         return ResponseEntity.ok().build();
     }
 
-    // 2. Nuevo endpoint para revertir
+    // 4. Endpoint para revertir
     @PutMapping("/{id}/revertir")
-    public ResponseEntity<Void> revertirPago(@PathVariable Long id, @RequestBody ReversionRequest request) {
+    public ResponseEntity<Void> revertirPago(
+            @PathVariable Long id,
+            @RequestBody ReversionRequest request) {
+
         deudaUseCase.revertirPago(id, request.motivo());
         return ResponseEntity.ok().build();
     }

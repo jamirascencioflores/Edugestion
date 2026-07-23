@@ -1,4 +1,5 @@
 import { CheckCircle, Clock, Banknote, RotateCcw } from "lucide-react";
+import BotonDescargaRecibo from "./BotonDescargaRecibo"; // Ajusta la ruta relativa si es necesario
 
 export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
   // 1. Función robusta para obtener el mes
@@ -118,14 +119,20 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                 )}
 
                 {d.estado === "PAGADA" && (
-                  <button
-                    onClick={() => onRevertir(d)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold rounded-lg transition-all shadow-sm active:scale-95"
-                    title="Revertir pago"
-                  >
-                    <RotateCcw size={14} />
-                    Revertir
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    {/* Botón de descarga de Recibo en PDF */}
+                    <BotonDescargaRecibo deudaId={d.id} />
+
+                    {/* Botón de Revertir Pago */}
+                    <button
+                      onClick={() => onRevertir(d)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold rounded-lg transition-all shadow-sm active:scale-95"
+                      title="Revertir pago"
+                    >
+                      <RotateCcw size={14} />
+                      Revertir
+                    </button>
+                  </div>
                 )}
               </td>
             </tr>

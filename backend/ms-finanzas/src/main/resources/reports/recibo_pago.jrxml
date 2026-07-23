@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="ReciboPago" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6e">
+
+    <parameter name="NUMERO_RECIBO" class="java.lang.String"/>
+    <parameter name="ESTUDIANTE_NOMBRE" class="java.lang.String"/>
+    <parameter name="FECHA_PAGO" class="java.lang.String"/>
+    <parameter name="CONCEPTO" class="java.lang.String"/>
+    <parameter name="MONTO_TOTAL" class="java.lang.String"/>
+
+    <title>
+        <band height="60">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="30" uuid="11112222-3333-4444-5555-666677778888"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="18" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Recibo de Pago - EduGestión"]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="30" width="555" height="20" uuid="22223333-4444-5555-6666-777788889999"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="12" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["N°: " + $P{NUMERO_RECIBO}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <detail>
+        <band height="120">
+            <textField>
+                <reportElement x="20" y="10" width="500" height="20" uuid="33334444-5555-6666-7777-888899990000"/>
+                <textElement><font size="12"/></textElement>
+                <textFieldExpression><![CDATA["Estudiante: " + $P{ESTUDIANTE_NOMBRE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="20" y="40" width="500" height="20" uuid="44445555-6666-7777-8888-999900001111"/>
+                <textElement><font size="12"/></textElement>
+                <textFieldExpression><![CDATA["Fecha de Pago: " + $P{FECHA_PAGO}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="20" y="70" width="500" height="20" uuid="55556666-7777-8888-9999-000011112222"/>
+                <textElement><font size="12"/></textElement>
+                <textFieldExpression><![CDATA["Concepto: " + $P{CONCEPTO}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="20" y="100" width="500" height="20" uuid="66667777-8888-9999-0000-111122223333"/>
+                <textElement><font size="12" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA["Monto Total: " + $P{MONTO_TOTAL}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+
+</jasperReport>

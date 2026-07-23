@@ -3,7 +3,7 @@ package com.omnis.saas.academico.domain.model;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
-import java.util.List; // <-- Importación agregada
+import java.util.List;
 
 @Data
 @Builder
@@ -18,4 +18,8 @@ public class Estudiante {
     private Long colegioId;
     private Boolean estado;
     private List<Long> apoderadoIds;
+
+    public String getNombreCompleto() {
+        return this.nombres + " " + this.apellidos;
+    }
 }

@@ -20,7 +20,7 @@ import Estudiantes from "./pages/Director/GestionAcademica/Estudiantes/Index";
 import Tarifarios from "./pages/Director/Finanzas/Tarifarios/index"; // <--- Nueva Importación
 import CajaIndex from "./pages/Director/Finanzas/Caja/index"; // Importación para Caja
 import RegistroCalificaciones from "./pages/Docentes/Calificaciones/RegistroCalificaciones";
-import SetupPassword from "./pages/SetupPassword";
+import SetupPassword from "./pages/public/SetupPassword";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
