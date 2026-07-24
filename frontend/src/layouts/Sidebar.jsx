@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { GraduationCap } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-// Importamos la configuración de los menús
 import {
   menuSuperAdmin,
+  menuSuperAdminSistema, // <--- Nueva importación
   menuDirector,
   menuDocente,
   menuSistema,
@@ -16,7 +16,7 @@ export default function Sidebar() {
   const nombreUsuario = user?.nombre || "Usuario";
   const rolUsuario = user?.rol?.replace("ROLE_", "") || "INVITADO";
 
-  // Asignación dinámica súper limpia
+  // Asignación dinámica súper limpia para el menú principal
   const getMenuItems = () => {
     switch (rolUsuario) {
       case "SUPERADMIN":
@@ -30,7 +30,20 @@ export default function Sidebar() {
     }
   };
 
+  // Asignación dinámica para el menú inferior (Sistema / Admin SaaS)
+  const getSystemMenuItems = () => {
+    switch (rolUsuario) {
+      case "SUPERADMIN":
+        return menuSuperAdminSistema;
+      case "ADMIN_COLEGIO":
+        return menuSistema;
+      default:
+        return [];
+    }
+  };
+
   const menuItems = getMenuItems();
+  const systemMenuItems = getSystemMenuItems();
 
   return (
     <aside className="w-64 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-colors duration-300 fixed left-0 top-0 z-20">
@@ -46,7 +59,7 @@ export default function Sidebar() {
         </span>
       </div>
 
-      {/* Navegación */}
+      {/* Navegación Principal */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-4">
           Menú Principal
@@ -78,23 +91,34 @@ export default function Sidebar() {
           })}
         </div>
 
-        {/* Menú de Sistema (Oculto para Docentes) */}
-        {(rolUsuario === "SUPERADMIN" || rolUsuario === "ADMIN_COLEGIO") && (
+        {/* Menú Inferior Dinámico (Oculto para Docentes) */}
+        {systemMenuItems.length > 0 && (
           <>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mt-8 mb-4">
-              Sistema
+              {rolUsuario === "SUPERADMIN" ? "Administración SaaS" : "Sistema"}
             </p>
             <div className="space-y-1">
-              {menuSistema.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all"
-                >
-                  {item.icon}
-                  {item.name}
-                </Link>
-              ))}
+              {systemMenuItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
+                        : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <span
+                      style={isActive ? { color: "var(--color-primary)" } : {}}
+                    >
+                      {item.icon}
+                    </span>
+                    {item.name}
+                  </Link>
+                );
+              })}
             </div>
           </>
         )}

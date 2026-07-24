@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Download,
   Filter,
@@ -7,6 +8,8 @@ import {
   Power,
   ExternalLink,
 } from "lucide-react";
+// IMPORTA LA FUNCIÓN (Ajusta la ruta si lo pusiste en otra carpeta)
+import { exportarColegiosExcel } from "./exportUtils";
 
 export default function TablaColegios({
   colegios,
@@ -14,17 +17,95 @@ export default function TablaColegios({
   onToggleEstado,
   onDelete,
 }) {
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [filtroPlan, setFiltroPlan] = useState("TODOS");
+
+  const colegiosFiltrados = colegios.filter((c) => {
+    const matchEstado =
+      filtroEstado === "TODOS"
+        ? true
+        : filtroEstado === "ACTIVO"
+          ? c.estado === true
+          : c.estado === false;
+    const matchPlan = filtroPlan === "TODOS" ? true : c.plan === filtroPlan;
+    return matchEstado && matchPlan;
+  });
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/30">
         <h3 className="font-bold">Colegios Registrados</h3>
-        <div className="flex gap-2">
-          <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+        <div className="flex gap-2 relative">
+          {/* BOTÓN DESCARGAR EXCEL */}
+          <button
+            onClick={() => exportarColegiosExcel(colegiosFiltrados)}
+            className="p-2 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+            title="Exportar a Excel"
+          >
             <Download size={18} />
           </button>
-          <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+
+          {/* BOTÓN FILTROS */}
+          <button
+            onClick={() => setShowFiltros(!showFiltros)}
+            className={`p-2 transition-colors ${
+              showFiltros || filtroEstado !== "TODOS" || filtroPlan !== "TODOS"
+                ? "text-primary bg-primary/10 rounded-lg"
+                : "text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            }`}
+            title="Filtrar tabla"
+          >
             <Filter size={18} />
           </button>
+
+          {/* MENÚ DESPLEGABLE DE FILTROS */}
+          {showFiltros && (
+            <div className="absolute right-0 top-10 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 z-10">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">
+                    Estado
+                  </label>
+                  <select
+                    value={filtroEstado}
+                    onChange={(e) => setFiltroEstado(e.target.value)}
+                    className="w-full text-sm border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="TODOS">Todos los estados</option>
+                    <option value="ACTIVO">Activos</option>
+                    <option value="INACTIVO">Inactivos</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">
+                    Plan
+                  </label>
+                  <select
+                    value={filtroPlan}
+                    onChange={(e) => setFiltroPlan(e.target.value)}
+                    className="w-full text-sm border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="TODOS">Todos los planes</option>
+                    <option value="BÁSICO">Básico</option>
+                    <option value="PREMIUM">Premium</option>
+                  </select>
+                </div>
+                {/* Botón para limpiar filtros si hay alguno activo */}
+                {(filtroEstado !== "TODOS" || filtroPlan !== "TODOS") && (
+                  <button
+                    onClick={() => {
+                      setFiltroEstado("TODOS");
+                      setFiltroPlan("TODOS");
+                    }}
+                    className="w-full text-xs text-red-500 font-medium hover:underline pt-2"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -41,32 +122,32 @@ export default function TablaColegios({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {colegios.length === 0 ? (
+            {colegiosFiltrados.length === 0 ? (
               <tr>
                 <td
                   colSpan="6"
                   className="px-6 py-10 text-center text-slate-400"
                 >
-                  No hay colegios registrados aún.
+                  No se encontraron colegios con esos criterios.
                 </td>
               </tr>
             ) : (
-              colegios.map((c) => (
+              colegiosFiltrados.map((c) => (
                 <tr
                   key={c.id}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  {/* 1. COLEGIO */}
+                  {/* COLEGIO */}
                   <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-100">
                     {c.nombre}
                   </td>
 
-                  {/* 2. SUBDOMINIO */}
+                  {/* SUBDOMINIO */}
                   <td className="px-6 py-4 font-medium text-slate-500">
                     {c.subdominio}.edugestion.io
                   </td>
 
-                  {/* 3. RESPONSABLE (Corregido con la validación doble) */}
+                  {/* RESPONSABLE */}
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -84,7 +165,7 @@ export default function TablaColegios({
                     </div>
                   </td>
 
-                  {/* 4. PLAN */}
+                  {/* PLAN */}
                   <td className="px-6 py-4">
                     <span
                       className={`px-2 py-1 rounded-md text-[10px] font-bold ${
@@ -99,7 +180,7 @@ export default function TablaColegios({
                     </span>
                   </td>
 
-                  {/* 5. ESTADO */}
+                  {/* ESTADO */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <div
@@ -113,7 +194,7 @@ export default function TablaColegios({
                     </div>
                   </td>
 
-                  {/* 6. ACCIONES */}
+                  {/* ACCIONES */}
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-3 text-slate-400">
                       <button

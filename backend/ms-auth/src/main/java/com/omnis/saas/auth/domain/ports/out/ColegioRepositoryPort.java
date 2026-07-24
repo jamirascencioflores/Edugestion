@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import java.time.LocalDate;
 
-
-
 public interface ColegioRepositoryPort {
     Colegio save(Colegio colegio);
     Optional<Colegio> findById(Long id);
@@ -16,4 +14,9 @@ public interface ColegioRepositoryPort {
     void delete(Colegio colegio);
     List<Colegio> buscarColegiosConSuscripcionVencida(LocalDate fechaActual);
     void guardarTodos(List<Colegio> colegios); // Para actualizar varios de golpe
+
+    // --- NUEVOS MÉTODOS PARA MÉTRICAS DEL DASHBOARD SUPERADMIN ---
+    long count();
+    long countByEstado(Boolean estado);
+    long countByPlan(String plan);
 }

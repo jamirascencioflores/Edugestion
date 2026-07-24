@@ -80,4 +80,19 @@ public class ColegioPersistenceAdapter implements ColegioRepositoryPort {
                 .collect(Collectors.toList());
         colegioRepository.saveAll(entities);
     }
+
+    @Override
+    public long count() {
+        return colegioRepository.count();
+    }
+
+    @Override
+    public long countByEstado(Boolean estado) {
+        return colegioRepository.countByEstado(estado);
+    }
+
+    @Override
+    public long countByPlan(String plan) {
+        return colegioRepository.countByPlan_Nombre(plan);
+    }
 }

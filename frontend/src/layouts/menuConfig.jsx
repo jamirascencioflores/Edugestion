@@ -3,7 +3,6 @@ import {
   School,
   Users,
   CreditCard,
-  Globe,
   ShieldCheck,
   Settings,
   BookOpen,
@@ -12,9 +11,11 @@ import {
   Library,
   Network,
   GraduationCap,
-  Wallet, // <--- Nueva importación de ícono
+  Wallet,
+  Megaphone, // <--- Nuevo ícono importado para los anuncios
 } from "lucide-react";
 
+// --- MENÚS SUPERADMIN ---
 export const menuSuperAdmin = [
   {
     name: "Dashboard General",
@@ -23,13 +24,31 @@ export const menuSuperAdmin = [
   },
   { name: "Colegios", path: "/colegios", icon: <School size={20} /> },
   {
-    name: "Suscripciones",
-    path: "/suscripciones",
+    name: "Planes y Pagos", // <--- Fusionado y renombrado
+    path: "/planes",
     icon: <CreditCard size={20} />,
   },
-  { name: "Dominios", path: "/dominios", icon: <Globe size={20} /> },
 ];
 
+export const menuSuperAdminSistema = [
+  {
+    name: "Anuncios Globales",
+    path: "/anuncios",
+    icon: <Megaphone size={20} />,
+  },
+  {
+    name: "Seguridad",
+    path: "/seguridad",
+    icon: <ShieldCheck size={20} />,
+  },
+  {
+    name: "Configuración",
+    path: "/configuracion",
+    icon: <Settings size={20} />,
+  },
+];
+
+// --- MENÚS DIRECTOR ---
 export const menuDirector = [
   {
     name: "Mi Colegio",
@@ -61,15 +80,16 @@ export const menuDirector = [
   {
     name: "Tarifarios",
     path: "/tarifarios",
-    icon: <Wallet size={20} />, // <--- Nueva opción en el menú
+    icon: <Wallet size={20} />,
   },
   {
     name: "Caja",
     path: "/caja",
-    icon: <CreditCard size={20} />, // Puedes usar el ícono CreditCard que ya tienes importado
+    icon: <CreditCard size={20} />,
   },
 ];
 
+// --- MENÚS DOCENTE ---
 export const menuDocente = [
   {
     name: "Mis Clases",
@@ -84,6 +104,7 @@ export const menuDocente = [
   { name: "Materiales", path: "/materiales", icon: <BookOpen size={20} /> },
 ];
 
+// --- MENÚS SISTEMA (ADMIN_COLEGIO) ---
 export const menuSistema = [
   {
     name: "Configuración",
@@ -92,3 +113,5 @@ export const menuSistema = [
   },
   { name: "Seguridad", path: "/seguridad", icon: <ShieldCheck size={20} /> },
 ];
+
+

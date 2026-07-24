@@ -7,6 +7,7 @@ import Landing from "./pages/public/Landing";
 import Login from "./pages/public/Login";
 import Mantenimiento from "./pages/public/Mantenimiento";
 import Dashboard from "./pages/DashboardRouter";
+import PlanesPagosSA from "./pages/SuperAdmin/PlanesPagos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout";
 import Docentes from "./pages/Director/GestionPersonal";
@@ -126,6 +127,30 @@ function App() {
             }
           />
 
+          {/* COLEGIOS: SUPERADMIN */}
+          <Route
+            path="/colegios"
+            element={
+              <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+                <AdminLayout>
+                  <GestionColegios />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* PLANES Y PAGOS: SUPERADMIN */}
+          <Route
+            path="/planes"
+            element={
+              <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+                <AdminLayout>
+                  <PlanesPagosSA />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
           {/* DOCENTES */}
           <Route
             path="/docentes"
@@ -149,10 +174,7 @@ function App() {
           />
 
           {/* RECUPERAR PASSWORD */}
-          <Route
-            path="/recuperar-password"
-            element={<RecuperarPassword />}
-          />
+          <Route path="/recuperar-password" element={<RecuperarPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ACADÉMICO: PERIODOS */}

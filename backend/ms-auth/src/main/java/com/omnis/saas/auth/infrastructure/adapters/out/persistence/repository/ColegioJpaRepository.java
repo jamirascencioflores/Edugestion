@@ -23,4 +23,7 @@ public interface ColegioJpaRepository extends JpaRepository<ColegioEntity, Long>
     @Modifying
     @Query("UPDATE ColegioEntity c SET c.estado = CASE WHEN c.estado = true THEN false ELSE true END WHERE c.id = :id")
     void toggleEstado(@Param("id") Long id);
+
+    long countByEstado(Boolean estado);
+    long countByPlan_Nombre(String nombrePlan);
 }
