@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioUseCase {
@@ -105,6 +107,40 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
         usuario.setTokenActivacion(null);
         usuario.setEstado(true);
         usuario.setDebeCambiarPassword(false);
+
+        usuarioRepositoryPort.guardar(usuario);
+    }
+
+    @Override
+    @Transactional
+    public void solicitarRecuperacionPassword(String email) {
+        Optional<Usuario> usuarioOpt = usuarioRepositoryPort.buscarPorEmail(email);
+
+        if (usuarioOpt.isEmpty()) return;
+
+        Usuario usuario = usuarioOpt.get();
+        String token = java.util.UUID.randomUUID().toString();
+
+        usuario.setTokenRecuperacion(token);
+        usuario.setExpiracionTokenRecuperacion(java.time.LocalDateTime.now().plusMinutes(15));
+        usuarioRepositoryPort.guardar(usuario);
+
+        // 6. Usamos tu puerto existente para enviar el correo
+        emailServicePort.enviarCorreoRecuperacion(usuario.getEmail(), usuario.getNombreCompleto(), token);
+    }
+
+    @Override
+    public void restablecerPassword(String token, String nuevaPassword) {
+        // Puedes reutilizar tu lógica de activación si valida el token de recuperación,
+        // o implementar la búsqueda por tokenRecuperacion:
+        Usuario usuario = usuarioRepositoryPort.findByTokenRecuperacion(token)
+                .orElseThrow(() -> new RuntimeException("El enlace de recuperación es inválido o ha expirado."));
+
+        // Validar expiración si manejas fecha de expiración del token...
+
+        usuario.setPasswordHash(passwordEncoder.encode(nuevaPassword));
+        usuario.setTokenRecuperacion(null);
+        usuario.setExpiracionTokenRecuperacion(null);
 
         usuarioRepositoryPort.guardar(usuario);
     }

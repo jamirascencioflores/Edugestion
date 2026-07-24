@@ -1,23 +1,82 @@
-/* 1. La nueva forma de importar Tailwind en la versión 4 (Elimina el error de @tailwind) */
 @import "tailwindcss";
 
-/* 2. Activador manual del Modo Oscuro para Tailwind v4 */
-@custom-variant dark (&:is(.dark *));
-
-/* 3. Nuestras variables de colores (La Paleta) */
+/* 1. Definición de variables globales */
 :root {
-  --color-primary: #5b21b6; /* Un morado institucional muy elegante */
-  --color-secondary: #64748b;
+  --color-primary: #9333ea; /* Morado por defecto (purple-600) */
+  --color-primary-hover: #7e22ce;
 }
 
 [data-theme="emerald"] {
-  --color-primary: #059669;
+  --color-primary: #059669; /* Verde (emerald-600) */
+  --color-primary-hover: #047857;
 }
 
-/* Quitamos el @apply que tenías antes para que VS Code no se queje, 
-   y usamos CSS puro para la transición del fondo */
+/* 2. Mapeo para Tailwind v4: esto fuerza a que las clases purple usen tu variable */
+@theme {
+  --color-purple-600: var(--color-primary);
+  --color-purple-700: var(--color-primary-hover);
+  --color-purple-500: var(--color-primary);
+}
+
+/* 3. Activación manual de Modo Oscuro */
+@custom-variant dark (&:is(.dark *));
+
 body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+/* 4. Fixes visuales para la Landing Page en Modo Oscuro */
+.dark header {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: #334155 !important;
+}
+
+.dark .bg-white {
+  background-color: #0f172a !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: #1e293b !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: #cbd5e1 !important;
+}
+
+.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+:root {
+  --color-primary: #5b21b6;
+  --color-primary-hover: #4c1d95;
+}
+
+[data-theme="emerald"] {
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+}
+
+[data-theme="blue"] {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+}
+
+[data-theme="rosa"] {
+  --color-primary: #f472b6;
+  --color-primary-hover: #ff69b4;
+}
+
+[data-theme="rojo"] {
+  --color-primary: #e11d48;
+  --color-primary-hover: #be123c;
 }

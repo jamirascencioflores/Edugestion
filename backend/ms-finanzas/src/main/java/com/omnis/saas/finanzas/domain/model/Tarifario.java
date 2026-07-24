@@ -16,5 +16,6 @@ public class Tarifario {
     private Long gradoId;
     private BigDecimal montoMensual;
     private Integer anioEscolar;
+    private String tipoTarifa; // "MATRICULA" o "PENSION"
     private Boolean estado;
 }

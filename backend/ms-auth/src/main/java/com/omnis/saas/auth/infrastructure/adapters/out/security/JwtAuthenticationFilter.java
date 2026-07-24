@@ -27,6 +27,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.contains("/public/")
+                || path.contains("/login")
+                || path.contains("/registro")
+                || path.equals("/error");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
@@ -42,15 +51,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (jwtAdapter.validarToken(jwt)) {
             String userEmail = jwtAdapter.extraerEmail(jwt);
             Long tokenColegioId = jwtAdapter.extraerColegioId(jwt);
-            Long urlColegioId = (Long) request.getAttribute("tenant_colegio_id"); // Obtenido por el TenantResolverFilter
+            Long urlColegioId = (Long) request.getAttribute("tenant_colegio_id");
 
-            // RESPALDO DE SEGURIDAD: Si el filtro anterior no inyectó el ID pero el JWT sí lo tiene, lo rescatamos
             if (urlColegioId == null && tokenColegioId != null) {
                 request.setAttribute("tenant_colegio_id", tokenColegioId);
                 urlColegioId = tokenColegioId;
             }
 
-            // SEGURIDAD DE ÉLITE: Evitar que usen un token de un colegio en otro subdominio
             if (tokenColegioId != null && urlColegioId != null && !tokenColegioId.equals(urlColegioId)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setCharacterEncoding("UTF-8");
@@ -67,7 +74,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                // Aseguramos que el colegioId quede en la petición (por si la ruta no tenía subdominio en URL)
                 if (tokenColegioId != null && urlColegioId == null) {
                     request.setAttribute("tenant_colegio_id", tokenColegioId);
                 }

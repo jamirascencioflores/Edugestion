@@ -62,4 +62,11 @@ public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
         return usuarioRepository.findByTokenActivacion(token)
                 .map(usuarioMapper::toDomain);
     }
+
+    @Override
+    public Optional<Usuario> findByTokenRecuperacion(String token) {
+        return usuarioRepository.findByTokenRecuperacion(token)
+                .map(usuarioMapper::toDomain);
+    }
+
 }

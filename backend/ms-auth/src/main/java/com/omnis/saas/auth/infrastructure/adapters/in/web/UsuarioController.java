@@ -100,4 +100,35 @@ public class UsuarioController {
             );
         }
     }
+
+    @PostMapping("/public/recuperar-password")
+    public ResponseEntity<?> solicitarRecuperacionPassword(@RequestBody RecuperarPasswordRequestDTO dto) {
+        System.out.println(">>> SÍ ENTRÓ AL CONTROLLER CON EL CORREO: " + dto.email());
+        try {
+            usuarioUseCase.solicitarRecuperacionPassword(dto.email());
+            return ResponseEntity.ok(
+                    java.util.Map.of("mensaje", "Si el correo existe, se enviará un enlace de recuperación.")
+            );
+        } catch (RuntimeException e) {
+            System.out.println(">>> ERROR AL ENVIAR CORREO: " + e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
+
+    @PostMapping("/public/restablecer-password")
+    public ResponseEntity<?> restablecerPassword(@RequestBody RestablecerPasswordRequestDTO dto) {
+        try {
+            usuarioUseCase.restablecerPassword(dto.token(), dto.nuevaPassword());
+
+            return ResponseEntity.ok(
+                    Map.of("mensaje", "Contraseña restablecida exitosamente")
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", e.getMessage())
+            );
+        }
+    }
 }

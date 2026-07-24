@@ -14,6 +14,7 @@ public class TarifarioMapper {
                 .gradoId(entity.getGradoId())
                 .montoMensual(entity.getMontoMensual())
                 .anioEscolar(entity.getAnioEscolar())
+                .tipoTarifa(entity.getTipoTarifa())
                 .estado(entity.getEstado())
                 .build();
     }
@@ -26,6 +27,7 @@ public class TarifarioMapper {
                 .gradoId(domain.getGradoId())
                 .montoMensual(domain.getMontoMensual())
                 .anioEscolar(domain.getAnioEscolar())
+                .tipoTarifa(domain.getTipoTarifa())
                 .estado(domain.getEstado())
                 .build();
     }

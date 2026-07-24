@@ -35,4 +35,7 @@ public class TarifarioEntity {
 
     @Column(nullable = false)
     private Boolean estado;
+
+    @Column(name = "tipo_tarifa", nullable = false, length = 20)
+    private String tipoTarifa;
 }

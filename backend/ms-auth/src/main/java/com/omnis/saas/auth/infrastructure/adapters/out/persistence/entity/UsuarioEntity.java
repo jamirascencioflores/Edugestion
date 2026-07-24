@@ -47,4 +47,10 @@ public class UsuarioEntity {
 
     @Column(name = "token_activacion")
     private String tokenActivacion;
+
+    @Column(name = "token_Recuperacion")
+    private String tokenRecuperacion;
+
+    @Column(name = "expiracion_token_recuperacion")
+    private LocalDateTime expiracionTokenRecuperacion;
 }

@@ -13,7 +13,8 @@ public record EstudianteRegistroDTO(
         Long seccionId,
         List<Long> apoderadoIds,
         Long gradoId,
-        Integer anioEscolar
+        Integer anioEscolar,
+        LocalDate fechaInscripcion // <-- Campo añadido
 ) {
     public Estudiante toDomain(Long colegioId) {
         return Estudiante.builder()

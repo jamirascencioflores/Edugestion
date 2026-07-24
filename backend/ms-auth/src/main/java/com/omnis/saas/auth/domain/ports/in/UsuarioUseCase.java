@@ -9,4 +9,6 @@ public interface UsuarioUseCase {
     AuthResponseDTO login(String email, String password, Long colegioId);
     void cambiarPassword(String email, String nuevaPassword);
     void activarCuentaConToken(String token, String nuevaPassword);
+    void solicitarRecuperacionPassword(String email);
+    void restablecerPassword(String token, String nuevaPassword); // <--- Añade esto
 }

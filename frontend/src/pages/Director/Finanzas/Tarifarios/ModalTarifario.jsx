@@ -3,13 +3,19 @@ import { X, Save } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
-export default function ModalTarifario({ onClose, onSuccess }) {
-  const anioActual = new Date().getFullYear(); // 2026
+export default function ModalTarifario({
+  onClose,
+  onSuccess,
+  tarifarioEditar,
+}) {
+  const anioActual = new Date().getFullYear();
 
+  // Inicializamos el estado directamente con los props si existen
   const [formData, setFormData] = useState({
-    gradoId: "",
-    montoMensual: "",
-    anioEscolar: anioActual,
+    gradoId: tarifarioEditar?.gradoId || "",
+    montoMensual: tarifarioEditar?.montoMensual || "",
+    anioEscolar: tarifarioEditar?.anioEscolar || anioActual,
+    tipoTarifa: tarifarioEditar?.tipoTarifa || "PENSION",
   });
 
   const [grados, setGrados] = useState([]);
@@ -31,8 +37,13 @@ export default function ModalTarifario({ onClose, onSuccess }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/finanzas/tarifarios", formData);
-      toast.success("Tarifario configurado con éxito");
+      if (tarifarioEditar) {
+        await api.put(`/finanzas/tarifarios/${tarifarioEditar.id}`, formData);
+        toast.success("Tarifario actualizado con éxito");
+      } else {
+        await api.post("/finanzas/tarifarios", formData);
+        toast.success("Tarifario configurado con éxito");
+      }
       onSuccess();
       onClose();
     } catch {
@@ -48,11 +59,11 @@ export default function ModalTarifario({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden">
         <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Configurar Pensión
+            {tarifarioEditar ? "Editar Tarifa" : "Configurar Tarifa"}
           </h2>
           <button
             onClick={onClose}
@@ -63,18 +74,35 @@ export default function ModalTarifario({ onClose, onSuccess }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Año Escolar
-            </label>
-            <input
-              type="number"
-              name="anioEscolar"
-              required
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
-              value={formData.anioEscolar}
-              onChange={handleChange}
-            />
+          <div className="flex gap-4">
+            <div className="w-1/2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Año Escolar
+              </label>
+              <input
+                type="number"
+                name="anioEscolar"
+                required
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                value={formData.anioEscolar}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="w-1/2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Tipo
+              </label>
+              <select
+                name="tipoTarifa"
+                required
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                value={formData.tipoTarifa}
+                onChange={handleChange}
+              >
+                <option value="PENSION">Pensión</option>
+                <option value="MATRICULA">Matrícula</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -99,7 +127,7 @@ export default function ModalTarifario({ onClose, onSuccess }) {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Monto Mensual (S/)
+              Monto (S/)
             </label>
             <input
               type="number"

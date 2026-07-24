@@ -15,12 +15,34 @@ public class TarifarioServiceImpl implements TarifarioUseCase {
 
     @Override
     public Tarifario crearTarifario(Tarifario tarifario) {
-        tarifario.setEstado(true); // Activo por defecto
+        tarifario.setEstado(true);
         return repositoryPort.save(tarifario);
     }
 
     @Override
     public List<Tarifario> obtenerPorAnio(Long colegioId, Integer anioEscolar) {
         return repositoryPort.findByColegioIdAndAnioEscolar(colegioId, anioEscolar);
+    }
+
+    @Override
+    public Tarifario actualizarTarifario(Long id, Long colegioId, Tarifario tarifarioActualizado) {
+        Tarifario existente = repositoryPort.findByIdAndColegioId(id, colegioId)
+                .orElseThrow(() -> new RuntimeException("Tarifario no encontrado"));
+
+        existente.setGradoId(tarifarioActualizado.getGradoId());
+        existente.setMontoMensual(tarifarioActualizado.getMontoMensual());
+        existente.setAnioEscolar(tarifarioActualizado.getAnioEscolar());
+        existente.setTipoTarifa(tarifarioActualizado.getTipoTarifa());
+
+        return repositoryPort.save(existente);
+    }
+
+    @Override
+    public void cambiarEstado(Long id, Long colegioId, Boolean estado) {
+        Tarifario existente = repositoryPort.findByIdAndColegioId(id, colegioId)
+                .orElseThrow(() -> new RuntimeException("Tarifario no encontrado"));
+
+        existente.setEstado(estado);
+        repositoryPort.save(existente);
     }
 }

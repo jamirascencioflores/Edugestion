@@ -21,5 +21,8 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioEntity, UUID>
     void deleteByColegioId(Long colegioId);
 
     Optional<UsuarioEntity> findByEmailAndColegioId(String email, Long colegioId);
+
     Optional<UsuarioEntity> findByTokenActivacion(String tokenActivacion);
+
+    Optional<UsuarioEntity> findByTokenRecuperacion(String tokenRecuperacion);
 }

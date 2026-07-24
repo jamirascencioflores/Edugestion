@@ -1,10 +1,12 @@
 package com.omnis.saas.finanzas.domain.ports.in;
 
 import com.omnis.saas.finanzas.domain.model.Deuda;
+
+import java.time.LocalDate;
 import java.util.List;
 
 public interface DeudaUseCase {
-    void generarCuotasAnuales(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar);
+    void generarCuotasAnuales(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion);
     List<Deuda> obtenerPorEstudiante(Long colegioId, Long estudianteId);
     void anularDeuda(Long colegioId, Long deudaId);
 
@@ -17,4 +19,5 @@ public interface DeudaUseCase {
     void anularCuotasPendientes(Long colegioId, Long estudianteId);
 
     void reactivarCuotasAnuladas(Long colegioId, Long estudianteId);
+
 }

@@ -1,8 +1,7 @@
 import { CheckCircle, Clock, Banknote, RotateCcw } from "lucide-react";
-import BotonDescargaRecibo from "./BotonDescargaRecibo"; // Ajusta la ruta relativa si es necesario
+import BotonDescargaRecibo from "./BotonDescargaRecibo";
 
 export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
-  // 1. Función robusta para obtener el mes
   const getNombreMes = (deuda) => {
     const meses = [
       "Enero",
@@ -31,114 +30,139 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
         return meses[fecha.getMonth()];
       }
     }
-
     return "";
   };
 
-  // 2. Ordenamiento cronológico
   const deudasOrdenadas = [...deudas].sort(
     (a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento),
   );
 
-  // 3. Renderizado
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-            <th className="p-3 text-xs font-semibold text-slate-500 uppercase">
-              Concepto
-            </th>
-            <th className="p-3 text-xs font-semibold text-slate-500 uppercase">
-              Monto
-            </th>
-            <th className="p-3 text-xs font-semibold text-slate-500 uppercase">
-              Vencimiento
-            </th>
-            <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-center">
-              Estado
-            </th>
-            <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">
-              Acción
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-          {deudasOrdenadas.map((d) => (
-            <tr
-              key={d.id}
-              className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-            >
-              <td className="p-3">
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                  Pensión {getNombreMes(d)} {d.anioEscolar}
-                </p>
-                {/* Muestra el número de operación si fue registrado */}
-                {d.numeroOperacion && (
-                  <span className="text-xs text-slate-500 block mt-0.5">
-                    Op: {d.numeroOperacion}
-                  </span>
-                )}
-              </td>
-              <td className="p-3 text-sm text-slate-700 dark:text-slate-400">
-                S/ {Number(d.monto).toFixed(2)}
-              </td>
-              <td className="p-3 text-sm text-slate-600 dark:text-slate-500">
-                {Array.isArray(d.fechaVencimiento)
-                  ? `${d.fechaVencimiento[2].toString().padStart(2, "0")}/${d.fechaVencimiento[1].toString().padStart(2, "0")}/${d.fechaVencimiento[0]}`
-                  : new Date(
-                      d.fechaVencimiento + "T00:00:00",
-                    ).toLocaleDateString()}
-              </td>
-              <td className="p-3 text-center">
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    d.estado === "PAGADA"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                  }`}
+  // Filtramos para separar matrículas de pensiones
+  const matriculas = deudasOrdenadas.filter(
+    (d) =>
+      d.concepto?.toLowerCase().includes("matrícula") ||
+      d.concepto?.toLowerCase().includes("matricula"),
+  );
+
+  const pensiones = deudasOrdenadas.filter(
+    (d) =>
+      !d.concepto?.toLowerCase().includes("matrícula") &&
+      !d.concepto?.toLowerCase().includes("matricula"),
+  );
+
+  // Función auxiliar para renderizar cada tabla
+  const renderTabla = (lista, titulo) => {
+    if (lista.length === 0) return null;
+
+    return (
+      <div className="mb-6 last:mb-0">
+        <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-3 pl-1">
+          {titulo}
+        </h3>
+        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                <th className="p-3 text-xs font-semibold text-slate-500 uppercase">
+                  Concepto
+                </th>
+                <th className="p-3 text-xs font-semibold text-slate-500 uppercase">
+                  Monto
+                </th>
+                <th className="p-3 text-xs font-semibold text-slate-500 uppercase">
+                  Vencimiento
+                </th>
+                <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-center">
+                  Estado
+                </th>
+                <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">
+                  Acción
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              {lista.map((d) => (
+                <tr
+                  key={d.id}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors bg-white dark:bg-slate-900"
                 >
-                  {d.estado === "PAGADA" ? (
-                    <CheckCircle size={12} />
-                  ) : (
-                    <Clock size={12} />
-                  )}
-                  {d.estado}
-                </span>
-              </td>
-              <td className="p-3 text-right">
-                {d.estado === "PENDIENTE" && (
-                  <button
-                    onClick={() => onPagar(d)}
-                    style={{ backgroundColor: "var(--color-primary)" }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-all shadow-sm hover:opacity-90 active:scale-95"
-                  >
-                    <Banknote size={14} />
-                    Cobrar
-                  </button>
-                )}
-
-                {d.estado === "PAGADA" && (
-                  <div className="flex items-center justify-end gap-2">
-                    {/* Botón de descarga de Recibo en PDF */}
-                    <BotonDescargaRecibo deudaId={d.id} />
-
-                    {/* Botón de Revertir Pago */}
-                    <button
-                      onClick={() => onRevertir(d)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold rounded-lg transition-all shadow-sm active:scale-95"
-                      title="Revertir pago"
+                  <td className="p-3">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                      {d.concepto
+                        ? d.concepto
+                        : `Pensión ${getNombreMes(d)} ${d.anioEscolar}`}
+                    </p>
+                    {d.numeroOperacion && (
+                      <span className="text-xs text-slate-500 block mt-0.5">
+                        Op: {d.numeroOperacion}
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3 text-sm text-slate-700 dark:text-slate-400">
+                    S/ {Number(d.monto).toFixed(2)}
+                  </td>
+                  <td className="p-3 text-sm text-slate-600 dark:text-slate-500">
+                    {Array.isArray(d.fechaVencimiento)
+                      ? `${d.fechaVencimiento[2].toString().padStart(2, "0")}/${d.fechaVencimiento[1].toString().padStart(2, "0")}/${d.fechaVencimiento[0]}`
+                      : new Date(
+                          d.fechaVencimiento + "T00:00:00",
+                        ).toLocaleDateString()}
+                  </td>
+                  <td className="p-3 text-center">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        d.estado === "PAGADA"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                      }`}
                     >
-                      <RotateCcw size={14} />
-                      Revertir
-                    </button>
-                  </div>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                      {d.estado === "PAGADA" ? (
+                        <CheckCircle size={12} />
+                      ) : (
+                        <Clock size={12} />
+                      )}
+                      {d.estado}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    {d.estado === "PENDIENTE" && (
+                      <button
+                        onClick={() => onPagar(d)}
+                        style={{ backgroundColor: "var(--color-primary)" }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-all shadow-sm hover:opacity-90 active:scale-95"
+                      >
+                        <Banknote size={14} />
+                        Cobrar
+                      </button>
+                    )}
+
+                    {d.estado === "PAGADA" && (
+                      <div className="flex items-center justify-end gap-2">
+                        <BotonDescargaRecibo deudaId={d.id} />
+                        <button
+                          onClick={() => onRevertir(d)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold rounded-lg transition-all shadow-sm active:scale-95"
+                          title="Revertir pago"
+                        >
+                          <RotateCcw size={14} />
+                          Revertir
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {renderTabla(matriculas, "Matrícula")}
+      {renderTabla(pensiones, "Pensiones Mensuales")}
     </div>
   );
 }

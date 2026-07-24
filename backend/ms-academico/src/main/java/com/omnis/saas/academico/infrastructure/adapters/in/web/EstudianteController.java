@@ -19,7 +19,7 @@ public class EstudianteController {
     public ResponseEntity<?> crear(@RequestBody EstudianteRegistroDTO dto) {
         Long colegioId = TenantContext.getColegioId();
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                service.registrar(dto.toDomain(colegioId), dto.gradoId(), dto.anioEscolar())
+                service.registrar(dto.toDomain(colegioId), dto.gradoId(), dto.anioEscolar(), dto.fechaInscripcion())
         );
     }
 

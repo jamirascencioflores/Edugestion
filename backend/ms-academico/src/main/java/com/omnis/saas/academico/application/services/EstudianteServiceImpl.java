@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -19,9 +20,10 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
 
     @Override
     @Transactional
-    public Estudiante registrar(Estudiante estudiante, Long gradoId, Integer anioEscolar) {
+    public Estudiante registrar(Estudiante estudiante, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) { // <-- Parámetro añadido
         Estudiante estudianteGuardado = repositoryPort.guardar(estudiante);
-        eventPublisher.publicarAlumnoRegistrado(estudianteGuardado, gradoId, anioEscolar);
+        // Pasamos la fecha al publicador de eventos
+        eventPublisher.publicarAlumnoRegistrado(estudianteGuardado, gradoId, anioEscolar, fechaInscripcion);
         return estudianteGuardado;
     }
 

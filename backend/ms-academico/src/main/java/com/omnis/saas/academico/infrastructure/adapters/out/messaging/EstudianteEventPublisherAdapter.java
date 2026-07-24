@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -22,12 +24,13 @@ public class EstudianteEventPublisherAdapter implements EstudianteEventPublisher
     private static final String ROUTING_KEY_ALUMNO_RETIRADO = "alumno.retirado.key";
 
     @Override
-    public void publicarAlumnoRegistrado(Estudiante estudiante, Long gradoId, Integer anioEscolar) {
+    public void publicarAlumnoRegistrado(Estudiante estudiante, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) { // <-- Parámetro añadido
         AlumnoRegistradoEvent event = new AlumnoRegistradoEvent(
                 estudiante.getColegioId(),
                 estudiante.getId(),
                 gradoId,
-                anioEscolar
+                anioEscolar,
+                fechaInscripcion // <-- Campo inyectado al evento
         );
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_ACADEMICO, ROUTING_KEY_ALUMNO_REGISTRADO, event);

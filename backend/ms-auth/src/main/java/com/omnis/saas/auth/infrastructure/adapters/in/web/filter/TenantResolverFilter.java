@@ -24,19 +24,23 @@ public class TenantResolverFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        log.info("URI solicitada: {} | ServerName: {} | Header X-Subdominio: {}", request.getRequestURI(), request.getServerName(), request.getHeader("X-Subdominio"));
 
-        // 1. BYPASS CORS: Dejar pasar las peticiones OPTIONS sin restricciones
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+        String path = request.getRequestURI();
+
+        // 1. BYPASS TOTAL: Si la ruta es pública, de mantenimiento o preflight, que pase de largo inmediatamente
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod()) ||
+                (path != null && (path.contains("/public/") || path.contains("/login") || path.contains("/registro") || path.equals("/error") || path.contains("/sistema/mantenimiento")))) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String path = request.getRequestURI();
+        log.info("URI solicitada: {} | ServerName: {} | Header X-Subdominio: {}", path, request.getServerName(), request.getHeader("X-Subdominio"));
 
-        // 2. Dejamos pasar libremente solo las rutas estrictamente públicas de auth
-        if (path != null && (path.equals("/api/auth/login") ||
+        // 2. Dejamos pasar libremente las rutas públicas y la ruta de errores
+        if (path != null && (path.contains("/login") ||
                 path.contains("/registro") ||
+                path.contains("/public/") || // <-- Añadido
+                path.equals("/error") ||     // <-- Añadido para no enmascarar fallos
                 path.contains("/sistema/mantenimiento"))) {
             filterChain.doFilter(request, response);
             return;

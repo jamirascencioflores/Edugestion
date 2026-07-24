@@ -21,10 +21,22 @@ import Tarifarios from "./pages/Director/Finanzas/Tarifarios/index"; // <--- Nue
 import CajaIndex from "./pages/Director/Finanzas/Caja/index"; // Importación para Caja
 import RegistroCalificaciones from "./pages/Docentes/Calificaciones/RegistroCalificaciones";
 import SetupPassword from "./pages/public/SetupPassword";
+import RecuperarPassword from "./pages/public/RecuperarPassword";
+import ResetPassword from "./pages/public/ResetPassword"; // Importación para ResetPassword
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [theme, setTheme] = useState("default");
+  const [showPalette, setShowPalette] = useState(false); // <--- Nuevo estado
+
+  // Lista de temas
+  const themes = [
+    { id: "default", name: "Morado", color: "#5b21b6" },
+    { id: "emerald", name: "Esmeralda", color: "#059669" },
+    { id: "blue", name: "Azul", color: "#2563eb" },
+    { id: "rosa", name: "Rosa", color: "#f472b6" },
+    { id: "rojo", name: "Rojo", color: "#e11d48" },
+  ];
 
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add("dark");
@@ -40,7 +52,38 @@ function App() {
       <Toaster richColors position="top-right" />
       <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300">
         {/* Controles flotantes */}
-        <div className="fixed bottom-6 right-6 z-50 flex gap-3">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+          {/* Menú desplegable de colores */}
+          {showPalette && (
+            <div className="flex items-center gap-2 p-2 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-right-4 duration-200">
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id);
+                    setShowPalette(false);
+                  }}
+                  title={t.name}
+                  className={`w-7 h-7 rounded-full transition-transform hover:scale-125 ${
+                    theme === t.id
+                      ? "ring-2 ring-offset-2 ring-purple-500 scale-110"
+                      : ""
+                  }`}
+                  style={{ backgroundColor: t.color }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Botón Abrir Paleta */}
+          <button
+            onClick={() => setShowPalette(!showPalette)}
+            className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg hover:scale-110 transition-all border border-slate-200 dark:border-slate-700"
+          >
+            <Palette size={20} style={{ color: "var(--color-primary)" }} />
+          </button>
+
+          {/* Botón Modo Oscuro/Claro */}
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg hover:scale-110 transition-all border border-slate-200 dark:border-slate-700"
@@ -48,16 +91,8 @@ function App() {
             {darkMode ? (
               <Sun size={20} className="text-yellow-500" />
             ) : (
-              <Moon size={20} className="text-slate-700" />
+              <Moon size={20} className="text-slate-700 dark:text-slate-200" />
             )}
-          </button>
-          <button
-            onClick={() =>
-              setTheme(theme === "default" ? "emerald" : "default")
-            }
-            className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg hover:scale-110 transition-all border border-slate-200 dark:border-slate-700"
-          >
-            <Palette size={20} style={{ color: "var(--color-primary)" }} />
           </button>
         </div>
 
@@ -112,6 +147,13 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* RECUPERAR PASSWORD */}
+          <Route
+            path="/recuperar-password"
+            element={<RecuperarPassword />}
+          />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ACADÉMICO: PERIODOS */}
           <Route

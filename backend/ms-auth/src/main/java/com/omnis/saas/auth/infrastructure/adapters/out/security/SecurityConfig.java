@@ -28,12 +28,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/usuarios/registro", "/api/auth/usuarios/login", "/api/auth/usuarios/public/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/usuarios/registro",
+                                "/api/auth/usuarios/login",
+                                "/api/auth/usuarios/public/**",
+                                "/error" // <-- ESTO ES LO QUE TE SALVARÁ
+                        ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // 👇 NUEVO: Permiso específico para listar docentes
                         .requestMatchers(HttpMethod.GET, "/api/auth/docentes/**").hasAnyAuthority("ROLE_ADMIN_COLEGIO", "ROLE_SUPERADMIN")
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(tenantResolverFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)

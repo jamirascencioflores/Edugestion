@@ -8,7 +8,7 @@ public interface UsuarioRepositoryPort {
 
     Usuario guardar(Usuario usuario);
     Optional<Usuario> buscarPorEmail(String email);
-    Optional<Usuario> buscarPorId(UUID id); // <-- Cambiado a UUID
+    Optional<Usuario> buscarPorId(UUID id);
 
     Usuario save(Usuario usuario);
     Optional<Usuario> findFirstByColegioIdAndRolNombre(Long colegioId, String rolNombre);
@@ -16,4 +16,5 @@ public interface UsuarioRepositoryPort {
 
     Optional<Usuario> buscarPorEmailYColegio(String email, Long colegioId);
     Optional<Usuario> findByTokenActivacion(String token);
+    Optional<Usuario> findByTokenRecuperacion(String token);
 }

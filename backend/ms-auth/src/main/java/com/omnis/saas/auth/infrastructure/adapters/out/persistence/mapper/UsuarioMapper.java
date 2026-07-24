@@ -24,7 +24,9 @@ public class UsuarioMapper {
                 .estado(entity.getEstado())
                 .debeCambiarPassword(entity.getDebeCambiarPassword())
                 .createdAt(entity.getCreatedAt())
-                .tokenActivacion(entity.getTokenActivacion()) // <-- Añadido
+                .tokenActivacion(entity.getTokenActivacion())
+                .tokenRecuperacion(entity.getTokenRecuperacion()) // <-- Añadido
+                .expiracionTokenRecuperacion(entity.getExpiracionTokenRecuperacion()) // <-- Añadido
                 .build();
     }
 
@@ -40,7 +42,9 @@ public class UsuarioMapper {
         entity.setEstado(domain.getEstado());
         entity.setDebeCambiarPassword(domain.getDebeCambiarPassword());
         entity.setCreatedAt(domain.getCreatedAt());
-        entity.setTokenActivacion(domain.getTokenActivacion()); // <-- Añadido
+        entity.setTokenActivacion(domain.getTokenActivacion());
+        entity.setTokenRecuperacion(domain.getTokenRecuperacion()); // <-- Añadido
+        entity.setExpiracionTokenRecuperacion(domain.getExpiracionTokenRecuperacion()); // <-- Añadido
         return entity;
     }
 }

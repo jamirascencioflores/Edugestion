@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,7 +26,8 @@ public class AlumnoRegistradoListener {
                     event.colegioId(),
                     event.estudianteId(),
                     event.gradoId(),
-                    event.anioEscolar()
+                    event.anioEscolar(),
+                    event.fechaInscripcion() // <-- Añadido el parámetro de fecha de inscripción
             );
             log.info("Cuotas generadas exitosamente para el estudiante {}", event.estudianteId());
         } catch (Exception e) {

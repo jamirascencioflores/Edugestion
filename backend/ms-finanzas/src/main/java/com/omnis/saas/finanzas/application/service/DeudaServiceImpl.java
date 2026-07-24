@@ -28,24 +28,54 @@ public class DeudaServiceImpl implements DeudaUseCase {
 
     @Override
     @Transactional
-    public void generarCuotasAnuales(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar) {
-        Tarifario tarifario = tarifarioRepository.findByColegioIdAndAnioEscolar(colegioId, anioEscolar)
+    public void generarCuotasAnuales(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) {
+        // Si aún no envías la fecha desde ms-academico, usamos la fecha actual por defecto
+        if (fechaInscripcion == null) fechaInscripcion = LocalDate.now();
+
+        int mesInicio = fechaInscripcion.getMonthValue();
+        if (mesInicio < 3) mesInicio = 3; // Si se inscribe en enero/febrero, la pensión inicia en marzo
+
+        List<Tarifario> tarifarios = tarifarioRepository.findByColegioIdAndAnioEscolar(colegioId, anioEscolar)
                 .stream()
                 .filter(t -> t.getGradoId().equals(gradoId) && t.getEstado())
+                .toList();
+
+        Tarifario tarifaPension = tarifarios.stream()
+                .filter(t -> "PENSION".equals(t.getTipoTarifa()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Tarifario no encontrado para el grado"));
+                .orElseThrow(() -> new RuntimeException("Tarifario de PENSIÓN no encontrado para el grado"));
+
+        Tarifario tarifaMatricula = tarifarios.stream()
+                .filter(t -> "MATRICULA".equals(t.getTipoTarifa()))
+                .findFirst()
+                .orElse(null); // Puede ser null si el colegio no cobra matrícula
 
         List<Deuda> deudas = new ArrayList<>();
 
-        for (int i = 0; i < 10; i++) {
+        // 1. Generar Deuda de Matrícula (Si existe tarifa configurada)
+        if (tarifaMatricula != null) {
             deudas.add(Deuda.builder()
                     .colegioId(colegioId)
                     .estudianteId(estudianteId)
-                    .concepto("Pensión " + MESES[i] + " - " + anioEscolar)
-                    .monto(tarifario.getMontoMensual())
-                    .fechaVencimiento(LocalDate.of(anioEscolar, i + 3, 5))
+                    .concepto("Matrícula " + anioEscolar)
+                    .monto(tarifaMatricula.getMontoMensual())
+                    .fechaVencimiento(fechaInscripcion.plusDays(5)) // Vence 5 días después de la inscripción
                     .estado(EstadoDeuda.PENDIENTE)
                     .build());
+        }
+
+        // 2. Generar Deudas de Pensiones restantes (Desde el mes de ingreso hasta Diciembre)
+        if (mesInicio <= 12) {
+            for (int i = mesInicio; i <= 12; i++) {
+                deudas.add(Deuda.builder()
+                        .colegioId(colegioId)
+                        .estudianteId(estudianteId)
+                        .concepto("Pensión " + MESES[i - 3] + " - " + anioEscolar) // i=3 -> Índice 0 (Marzo)
+                        .monto(tarifaPension.getMontoMensual())
+                        .fechaVencimiento(LocalDate.of(anioEscolar, i, 5)) // Vencen el día 5 de cada mes
+                        .estado(EstadoDeuda.PENDIENTE)
+                        .build());
+            }
         }
 
         deudaRepository.saveAll(deudas);

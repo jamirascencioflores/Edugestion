@@ -5,6 +5,8 @@ import api from "../../../../api/axiosConfig";
 
 export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
   const anioActual = new Date().getFullYear();
+  // Obtenemos la fecha de hoy en formato YYYY-MM-DD
+  const hoy = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState({
     nombres: "",
@@ -13,15 +15,15 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     fechaNacimiento: "",
     emailInstitucional: "",
     seccionId: "",
-    gradoId: "", // <- NUEVO: Requerido por backend
-    anioEscolar: anioActual, // <- NUEVO: Requerido por backend
+    gradoId: "",
+    anioEscolar: anioActual,
+    fechaInscripcion: hoy, // <- NUEVO: Fecha de matrícula
     estado: true,
     apoderadoIds: [],
   });
 
   const [initialData, setInitialData] = useState(null);
 
-  // Estados para manejar Grados y Secciones
   const [grados, setGrados] = useState([]);
   const [secciones, setSecciones] = useState([]);
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
@@ -68,9 +70,9 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
         fechaNacimiento: fechaFormateada,
         emailInstitucional: estudiante.emailInstitucional || "",
         seccionId: estudiante.seccionId || "",
-        // Al editar, el backend ya tiene el grado y año, pero por seguridad los mapeamos
         gradoId: "",
         anioEscolar: anioActual,
+        fechaInscripcion: hoy,
         estado: estudiante.estado,
         apoderadoIds: estudiante.apoderadoIds || [],
       };
@@ -83,7 +85,6 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estudiante]);
 
-  // Sincronizamos el estado visual de "gradoSeleccionado" con el formData
   useEffect(() => {
     if (gradoSeleccionado) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -103,7 +104,6 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
       return;
     }
 
-    // Validación extra para creación
     if (!estudiante && (!formData.gradoId || !formData.anioEscolar)) {
       toast.error(
         "El grado y el año escolar son obligatorios para la matrícula",
@@ -114,11 +114,9 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     setLoading(true);
     try {
       if (estudiante) {
-        // En PUT, enviamos el DTO de actualización
         await api.put(`/academicos/estudiantes/${estudiante.id}`, formData);
         toast.success("Estudiante actualizado correctamente");
       } else {
-        // En POST, enviamos el DTO de registro completo (incluye gradoId y anioEscolar)
         await api.post("/academicos/estudiantes", formData);
         toast.success("Estudiante registrado y matriculado con éxito");
       }
@@ -228,7 +226,7 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
               />
             </div>
 
-            {/* Selector de Año Escolar - Visible siempre, pero bloqueado al editar */}
+            {/* Selector de Año Escolar */}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Año de Matrícula
@@ -239,12 +237,29 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
                 required
                 min="2020"
                 max="2100"
-                disabled={!!estudiante} // Se bloquea si el estudiante ya existe
+                disabled={!!estudiante}
                 className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                 value={formData.anioEscolar}
                 onChange={handleChange}
               />
             </div>
+
+            {/* Fecha de inscripción (Solo visible al crear) */}
+            {!estudiante && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Fecha de Inscripción
+                </label>
+                <input
+                  type="date"
+                  name="fechaInscripcion"
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none scheme-light dark:scheme-dark"
+                  value={formData.fechaInscripcion}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
