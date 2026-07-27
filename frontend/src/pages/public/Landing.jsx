@@ -1,6 +1,6 @@
 // src/pages/public/Landing.jsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   GraduationCap,
   Cloud,
@@ -17,6 +17,7 @@ import {
   BarChart3,
   ClipboardList,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import {
   Accordion,
@@ -373,85 +374,184 @@ function RolesSection() {
   );
 }
 function Pricing() {
+  const [planes, setPlanes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPlanesPublicos = async () => {
+      try {
+        // Usamos fetch directo a la URL base de tu backend para evitar temas de interceptores/tokens
+        const res = await fetch("http://localhost:8080/api/auth/usuarios/public/planes");
+        if (!res.ok) throw new Error("Error en respuesta");
+        const data = await res.json();
+
+        if (data && data.length > 0) {
+          setPlanes(data);
+        } else {
+          throw new Error("Sin datos");
+        }
+      } catch (error) {
+        console.warn(
+          "No se pudieron cargar los planes desde la API, usando datos locales:",
+          error,
+        );
+        // Fallback para que la interfaz NUNCA se quede en blanco
+        setPlanes([
+          {
+            id: 1,
+            nombre: "Plan Básico",
+            precioMensual: 199,
+            limiteAlumnos: 300,
+            permitePortalPadres: false,
+            permiteNotificaciones: false,
+            permiteReportesPdf: false,
+            permiteMarcaBlanca: false,
+            permiteFinanzasPro: false,
+          },
+          {
+            id: 2,
+            nombre: "Plan Premium",
+            precioMensual: 350,
+            limiteAlumnos: 999999,
+            permitePortalPadres: true,
+            permiteNotificaciones: true,
+            permiteReportesPdf: true,
+            permiteMarcaBlanca: true,
+            permiteFinanzasPro: true,
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlanesPublicos();
+  }, []);
+
   return (
-    <section id="precios" className="bg-white py-24">
+    <section
+      id="precios"
+      className="bg-white dark:bg-slate-900 py-24 transition-colors"
+    >
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-purple-600">
+          <span
+            className="text-sm font-semibold uppercase tracking-wider"
+            style={{ color: "var(--color-primary)" }}
+          >
             Precios
           </span>
-          <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
+          <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
             Planes claros, sin sorpresas
           </h2>
-          <p className="mt-4 text-slate-600">
+          <p className="mt-4 text-slate-600 dark:text-slate-400">
             Elige el plan que mejor se adapta al tamaño de tu institución.
           </p>
         </div>
 
-        <div className="mx-auto mt-14 grid max-w-4xl gap-6 md:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h3 className="text-xl font-semibold text-slate-900">
-              Plan Básico
-            </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Ideal para colegios pequeños.
-            </p>
-            <div className="mt-6 flex items-baseline gap-1">
-              <span className="text-5xl font-bold text-slate-900">S/ 150</span>
-              <span className="text-slate-500">/mes</span>
-            </div>
-            <Button
-              variant="outline"
-              className="mt-6 w-full border-purple-600 text-purple-700 hover:bg-purple-50"
-            >
-              Empezar ahora
-            </Button>
-            <ul className="mt-8 space-y-3 text-sm">
-              {[
-                "Hasta 200 estudiantes",
+        {loading ? (
+          <div className="flex justify-center items-center my-16">
+            <Loader2 className="animate-spin text-slate-400" size={36} />
+          </div>
+        ) : (
+          <div className="mx-auto mt-14 grid max-w-4xl gap-6 md:grid-cols-2">
+            {planes.map((plan) => {
+              const esPopular = plan.nombre.toLowerCase().includes("premium");
+
+              const caracteristicas = [
+                plan.limiteAlumnos >= 999999
+                  ? "Estudiantes ilimitados"
+                  : `Hasta ${plan.limiteAlumnos} estudiantes`,
                 "Módulo Académico",
                 "Módulo de Finanzas",
-                "Soporte por email",
-              ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-slate-700">
-                  <Check className="h-4 w-4 text-purple-600" /> {f}
-                </li>
-              ))}
-            </ul>
-          </div>
+                plan.permitePortalPadres && "Portal de Padres + App móvil",
+                plan.permiteNotificaciones && "Notificaciones Automáticas",
+                plan.permiteReportesPdf && "Reportes Avanzados en PDF",
+                plan.permiteMarcaBlanca && "Marca Blanca (Sin logos)",
+                plan.permiteFinanzasPro && "Finanzas PRO (Morosidad)",
+              ].filter(Boolean);
 
-          <div className="relative rounded-3xl border-2 border-purple-600 bg-white p-8 shadow-xl">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-purple-600 px-4 py-1 text-xs font-semibold text-white">
-              Más popular
-            </span>
-            <h3 className="text-xl font-semibold text-slate-900">
-              Plan Premium
-            </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Para instituciones en crecimiento.
-            </p>
-            <div className="mt-6 flex items-baseline gap-1">
-              <span className="text-5xl font-bold text-purple-600">S/ 350</span>
-              <span className="text-slate-500">/mes</span>
-            </div>
-            <Button className="mt-6 w-full bg-purple-600 text-white hover:bg-purple-700">
-              Comenzar Premium
-            </Button>
-            <ul className="mt-8 space-y-3 text-sm">
-              {[
-                "Estudiantes ilimitados",
-                "Todos los módulos incluidos",
-                "Portal de Padres + App móvil",
-                "Reportes avanzados y BI",
-                "Soporte prioritario 24/7",
-              ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-slate-700">
-                  <Check className="h-4 w-4 text-purple-600" /> {f}
-                </li>
-              ))}
-            </ul>
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative rounded-3xl bg-white dark:bg-slate-800 p-8 shadow-sm flex flex-col justify-between border-2 ${
+                    esPopular
+                      ? "shadow-xl"
+                      : "border-slate-200 dark:border-slate-700"
+                  }`}
+                  style={{
+                    borderColor: esPopular ? "var(--color-primary)" : undefined,
+                  }}
+                >
+                  {esPopular && (
+                    <span
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-semibold text-white shadow-sm"
+                      style={{ backgroundColor: "var(--color-primary)" }}
+                    >
+                      Más popular
+                    </span>
+                  )}
+
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                      {plan.nombre}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {esPopular
+                        ? "Para instituciones en crecimiento."
+                        : "Ideal para colegios pequeños."}
+                    </p>
+
+                    <div className="mt-6 flex items-baseline gap-1">
+                      <span
+                        className="text-5xl font-bold"
+                        style={{
+                          color: esPopular ? "var(--color-primary)" : undefined,
+                        }}
+                      >
+                        S/ {plan.precioMensual}
+                      </span>
+                      <span className="text-slate-500">/mes</span>
+                    </div>
+
+                    <Button
+                      variant={esPopular ? "default" : "outline"}
+                      className="mt-6 w-full font-medium"
+                      style={
+                        esPopular
+                          ? {
+                              backgroundColor: "var(--color-primary)",
+                              color: "#fff",
+                            }
+                          : {
+                              borderColor: "var(--color-primary)",
+                              color: "var(--color-primary)",
+                            }
+                      }
+                    >
+                      {esPopular ? "Comenzar Premium" : "Empezar ahora"}
+                    </Button>
+
+                    <ul className="mt-8 space-y-3 text-sm">
+                      {caracteristicas.map((f, i) => (
+                        <li
+                          key={i}
+                          className="flex items-center gap-2 text-slate-700 dark:text-slate-300"
+                        >
+                          <Check
+                            className="h-4 w-4 shrink-0"
+                            style={{ color: "var(--color-primary)" }}
+                          />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

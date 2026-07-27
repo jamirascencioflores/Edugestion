@@ -32,7 +32,7 @@ public class SecurityConfig {
                                 "/api/auth/usuarios/registro",
                                 "/api/auth/usuarios/login",
                                 "/api/auth/usuarios/public/**",
-                                "/error" // <-- ESTO ES LO QUE TE SALVARÁ
+                                "/error"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/docentes/**").hasAnyAuthority("ROLE_ADMIN_COLEGIO", "ROLE_SUPERADMIN")

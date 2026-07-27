@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Activity, Server, Users, Loader2 } from "lucide-react";
-import api from "@/api/axiosConfig"; // Ajusta la ruta según tu proyecto
+import { Activity, Server, Users, Loader2, TrendingUp } from "lucide-react";
+import api from "@/api/axiosConfig";
 import { toast } from "sonner";
 
 // COMPONENTE SECUNDARIO: Tarjetas KPI
@@ -19,8 +19,15 @@ function KpiCards({ data }) {
     },
     {
       label: "Ingresos Estimados (MRR)",
-      value: `S/ ${data.ingresosMensualesEstimados?.toLocaleString("es-PE") || 0}`,
-      trend: "Facturación mensual proyectada",
+      value: `S/ ${(data.ingresosMensualesEstimados || 0).toLocaleString(
+        "es-PE",
+        {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        },
+      )}`,
+      trend: "Planes base + Add-ons personalizados",
+      highlight: true,
     },
   ];
 
@@ -29,14 +36,33 @@ function KpiCards({ data }) {
       {kpis.map((kpi, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm"
+          className={`p-6 rounded-2xl border shadow-sm transition-all ${
+            kpi.highlight
+              ? "bg-white dark:bg-slate-800 border-2"
+              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+          }`}
+          style={
+            kpi.highlight ? { borderColor: "var(--color-primary)" } : undefined
+          }
         >
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-            {kpi.label}
-          </p>
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              {kpi.label}
+            </p>
+            {kpi.highlight && (
+              <TrendingUp size={16} style={{ color: "var(--color-primary)" }} />
+            )}
+          </div>
+
           <h3 className="text-3xl font-extrabold mb-2">{kpi.value}</h3>
+
           <p
-            className={`text-xs font-semibold ${kpi.negative ? "text-orange-500" : "text-emerald-500"}`}
+            className={`text-xs font-semibold ${
+              kpi.negative ? "text-orange-500" : ""
+            }`}
+            style={
+              !kpi.negative ? { color: "var(--color-primary)" } : undefined
+            }
           >
             {kpi.trend}
           </p>
@@ -52,18 +78,31 @@ export default function DashboardSA() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchKpis = async () => {
       try {
         const response = await api.get("/auth/superadmin/dashboard/kpis");
-        setKpis(response.data);
+        if (isMounted) {
+          setKpis(response.data);
+        }
       } catch (error) {
         console.error("Error fetching KPIs:", error);
-        toast.error("Error al cargar las métricas globales");
+        if (isMounted) {
+          toast.error("Error al cargar las métricas globales");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
+
     fetchKpis();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -78,7 +117,7 @@ export default function DashboardSA() {
         </p>
       </div>
 
-      {/* MÉTRICAS DE SISTEMA (Fijas por ahora) */}
+      {/* MÉTRICAS DE SISTEMA */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
@@ -115,7 +154,7 @@ export default function DashboardSA() {
         </div>
       </div>
 
-      {/* MÉTRICAS DE NEGOCIO (Dinámicas) */}
+      {/* MÉTRICAS DE NEGOCIO */}
       {loading ? (
         <div className="flex justify-center py-10">
           <Loader2 className="animate-spin text-slate-400" size={32} />

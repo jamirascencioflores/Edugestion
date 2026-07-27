@@ -1,16 +1,24 @@
-// src/pages/SuperAdmin/PlanesPagos/index.jsx
-
 import { useState, useEffect } from "react";
-import { Check, Edit2, Loader2, X } from "lucide-react";
+import { Loader2, Building2, Layers, Settings } from "lucide-react";
 import api from "@/api/axiosConfig";
 import { toast } from "sonner";
+import PlanCard from "./components/PlanCard";
+import EditPlanModal from "./components/EditPlanModal";
+import EditSuscripcionModal from "./components/EditSuscripcionModal";
 
 export default function PlanesPagosSA() {
+  const [activeTab, setActiveTab] = useState("planes"); // 'planes' | 'suscripciones'
   const [planes, setPlanes] = useState([]);
+  const [suscripciones, setSuscripciones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
+
+  // Modales
+  const [modalPlanOpen, setModalPlanOpen] = useState(false);
   const [planSeleccionado, setPlanSeleccionado] = useState(null);
-  const [formData, setFormData] = useState({
+  const [modalSuscripcionOpen, setModalSuscripcionOpen] = useState(false);
+  const [suscripcionSeleccionada, setSuscripcionSeleccionada] = useState(null);
+
+  const [formDataPlan, setFormDataPlan] = useState({
     precioMensual: "",
     limiteAlumnos: "",
     permitePortalPadres: false,
@@ -20,47 +28,96 @@ export default function PlanesPagosSA() {
     permiteFinanzasPro: false,
   });
 
-  const fetchPlanes = async () => {
+  const fetchData = async () => {
     try {
-      const response = await api.get("/auth/superadmin/planes");
-      setPlanes(response.data);
+      setLoading(true);
+      const [resPlanes, resSuscripciones] = await Promise.allSettled([
+        api.get("/auth/superadmin/planes"),
+        api.get("/auth/superadmin/suscripciones"),
+      ]);
+
+      if (resPlanes.status === "fulfilled") setPlanes(resPlanes.value.data);
+      if (resSuscripciones.status === "fulfilled")
+        setSuscripciones(resSuscripciones.value.data);
     } catch (error) {
-      console.error("Error fetching subscription plans:", error);
-      toast.error("Error al cargar los planes de suscripción");
+      console.error("Error al cargar datos:", error);
+      toast.error("Error al sincronizar datos");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    //eslint-disable-next-line
-    fetchPlanes();
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      try {
+        const [resPlanes, resSuscripciones] = await Promise.allSettled([
+          api.get("/auth/superadmin/planes"),
+          api.get("/auth/superadmin/suscripciones"),
+        ]);
+
+        if (isMounted) {
+          if (resPlanes.status === "fulfilled") setPlanes(resPlanes.value.data);
+          if (resSuscripciones.status === "fulfilled")
+            setSuscripciones(resSuscripciones.value.data);
+        }
+      } catch (error) {
+        console.error("Error al cargar datos en el efecto:", error);
+        if (isMounted) toast.error("Error al sincronizar datos");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const handleOpenModal = (plan) => {
+  // Handlers para Planes
+  const handleOpenEditPlan = (plan) => {
     setPlanSeleccionado(plan);
-    setFormData({
-      precioMensual: plan.precioMensual,
-      limiteAlumnos: plan.limiteAlumnos,
-      permitePortalPadres: plan.permitePortalPadres,
-      permiteNotificaciones: plan.permiteNotificaciones,
-      permiteReportesPdf: plan.permiteReportesPdf,
-      permiteMarcaBlanca: plan.permiteMarcaBlanca,
-      permiteFinanzasPro: plan.permiteFinanzasPro,
-    });
-    setModalOpen(true);
+    setFormDataPlan({ ...plan });
+    setModalPlanOpen(true);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmitPlan = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/auth/superadmin/planes/${planSeleccionado.id}`, formData);
-      toast.success("Plan actualizado correctamente");
-      setModalOpen(false);
-      fetchPlanes();
+      await api.put(
+        `/auth/superadmin/planes/${planSeleccionado.id}`,
+        formDataPlan,
+      );
+      toast.success("Plan base actualizado correctamente");
+      setModalPlanOpen(false);
+      fetchData();
     } catch (error) {
       console.error("Error updating plan:", error);
-      toast.error("Error al actualizar el plan");
+      toast.error("Error al actualizar el plan base");
+    }
+  };
+
+  // Handlers para Suscripciones de Colegios
+  const handleOpenEditSuscripcion = (suscripcion) => {
+    setSuscripcionSeleccionada(suscripcion);
+    setModalSuscripcionOpen(true);
+  };
+
+  const handleSubmitSuscripcion = async (colegioId, data) => {
+    try {
+      await api.put(
+        `/auth/superadmin/suscripciones/colegio/${colegioId}`,
+        data,
+      );
+      toast.success("Suscripción de colegio actualizada");
+      setModalSuscripcionOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      toast.error("Error al guardar la suscripción");
     }
   };
 
@@ -74,227 +131,162 @@ export default function PlanesPagosSA() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          Planes y Precios
-        </h1>
-        <p className="text-slate-500 mt-1 text-sm">
-          Gestiona las características y tarifas de los planes SaaS disponibles
-          para las instituciones.
-        </p>
-      </div>
-
-      {/* GRID DE PLANES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {planes.map((plan) => (
-          <div
-            key={plan.id}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <span
-                    className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-slate-100 dark:bg-slate-700"
-                    style={{ color: "var(--color-primary)" }}
-                  >
-                    {plan.nombre}
-                  </span>
-                  <h3 className="text-3xl font-extrabold mt-3">
-                    S/ {plan.precioMensual}{" "}
-                    <span className="text-sm font-normal text-slate-400">
-                      / mes
-                    </span>
-                  </h3>
-                </div>
-                <button
-                  onClick={() => handleOpenModal(plan)}
-                  className="p-2 text-slate-400 transition-colors hover:opacity-80"
-                  style={{ "--hover-color": "var(--color-primary)" }}
-                  title="Editar Plan"
-                >
-                  <Edit2 size={18} />
-                </button>
-              </div>
-
-              <div className="space-y-3 my-6 text-sm">
-                <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
-                  <span className="text-slate-500">Límite de Alumnos:</span>
-                  <span className="font-semibold">
-                    {plan.limiteAlumnos >= 999999
-                      ? "Ilimitados"
-                      : plan.limiteAlumnos}
-                  </span>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Características incluidas:
-                  </p>
-                  {[
-                    {
-                      label: "Portal de Padres",
-                      active: plan.permitePortalPadres,
-                    },
-                    {
-                      label: "Notificaciones Automáticas",
-                      active: plan.permiteNotificaciones,
-                    },
-                    {
-                      label: "Reportes y PDFs Avanzados",
-                      active: plan.permiteReportesPdf,
-                    },
-                    {
-                      label: "Marca Blanca (Sin logos)",
-                      active: plan.permiteMarcaBlanca,
-                    },
-                    {
-                      label: "Finanzas PRO (Morosidad)",
-                      active: plan.permiteFinanzasPro,
-                    },
-                  ].map((feat, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      {feat.active ? (
-                        <Check size={16} className="text-emerald-500" />
-                      ) : (
-                        <X
-                          size={16}
-                          className="text-slate-300 dark:text-slate-600"
-                        />
-                      )}
-                      <span
-                        className={
-                          feat.active
-                            ? "text-slate-700 dark:text-slate-200"
-                            : "text-slate-400 line-through"
-                        }
-                      >
-                        {feat.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => handleOpenModal(plan)}
-              className="w-full mt-4 py-2.5 text-white font-medium rounded-xl transition-all text-sm shadow-md"
-              style={{ backgroundColor: "var(--color-primary)" }}
-            >
-              Modificar Configuración
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* MODAL DE EDICIÓN */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-xl border border-slate-200 dark:border-slate-700">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">
-                Editar Plan: {planSeleccionado?.nombre}
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                  Precio Mensual (S/)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.precioMensual}
-                  onChange={(e) =>
-                    setFormData({ ...formData, precioMensual: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-transparent text-sm focus:outline-none focus:ring-2"
-                  style={{ "--tw-ring-color": "var(--color-primary)" }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                  Límite de Alumnos
-                </label>
-                <input
-                  type="number"
-                  value={formData.limiteAlumnos}
-                  onChange={(e) =>
-                    setFormData({ ...formData, limiteAlumnos: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-transparent text-sm focus:outline-none focus:ring-2"
-                  style={{ "--tw-ring-color": "var(--color-primary)" }}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Permisos y Módulos
-                </p>
-                {[
-                  { key: "permitePortalPadres", label: "Portal de Padres" },
-                  {
-                    key: "permiteNotificaciones",
-                    label: "Notificaciones Automáticas",
-                  },
-                  {
-                    key: "permiteReportesPdf",
-                    label: "Reportes y PDFs Avanzados",
-                  },
-                  { key: "permiteMarcaBlanca", label: "Marca Blanca" },
-                  { key: "permiteFinanzasPro", label: "Finanzas PRO" },
-                ].map((item) => (
-                  <label
-                    key={item.key}
-                    className="flex items-center gap-3 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData[item.key]}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          [item.key]: e.target.checked,
-                        })
-                      }
-                      className="rounded border-slate-300 w-4 h-4"
-                      style={{ accentColor: "var(--color-primary)" }}
-                    />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-white rounded-xl text-sm font-medium transition-colors shadow-md"
-                  style={{ backgroundColor: "var(--color-primary)" }}
-                >
-                  Guardar Cambios
-                </button>
-              </div>
-            </form>
-          </div>
+      {/* Encabezado y Pestañas */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            Planes y Tarifas SaaS
+          </h1>
+          <p className="text-slate-500 mt-1 text-sm">
+            Administra la oferta general o personaliza módulos y cobros por cada
+            colegio.
+          </p>
         </div>
+
+        {/* NAVEGACIÓN TABS */}
+        <div className="flex bg-slate-200/60 dark:bg-slate-800 p-1 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveTab("planes")}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "planes"
+                ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white"
+                : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+            }`}
+          >
+            <Layers size={16} /> Planes Base
+          </button>
+          <button
+            onClick={() => setActiveTab("suscripciones")}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "suscripciones"
+                ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white"
+                : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+            }`}
+          >
+            <Building2 size={16} /> Suscripciones por Colegio
+          </button>
+        </div>
+      </div>
+
+      {/* PESTAÑA 1: PLANES BASE */}
+      {activeTab === "planes" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {planes.map((plan) => (
+            <PlanCard key={plan.id} plan={plan} onEdit={handleOpenEditPlan} />
+          ))}
+        </div>
+      )}
+
+      {/* PESTAÑA 2: SUSCRIPCIONES POR COLEGIO */}
+      {activeTab === "suscripciones" && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 text-xs font-bold uppercase text-slate-500">
+                <th className="p-4">Colegio</th>
+                <th className="p-4">Plan Base</th>
+                <th className="p-4">Módulos Activos</th>
+                <th className="p-4">Extra Adicional</th>
+                <th className="p-4">Mensualidad Total</th>
+                <th className="p-4 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {suscripciones.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-400">
+                    No hay suscripciones registradas aún.
+                  </td>
+                </tr>
+              ) : (
+                suscripciones.map((sub) => (
+                  <tr
+                    key={sub.id}
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30"
+                  >
+                    <td className="p-4 font-semibold text-slate-800 dark:text-slate-200">
+                      {sub.nombreColegio || `Colegio ID #${sub.colegioId}`}
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                        {sub.planBase?.nombre || "Sin Plan"}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-1">
+                        {sub.permitePortalPadres && (
+                          <span className="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 px-2 py-0.5 rounded font-semibold">
+                            Padres
+                          </span>
+                        )}
+                        {sub.permiteNotificaciones && (
+                          <span className="text-[10px] bg-blue-50 text-blue-600 dark:bg-blue-950/40 px-2 py-0.5 rounded font-semibold">
+                            Avisos
+                          </span>
+                        )}
+                        {sub.permiteReportesPdf && (
+                          <span className="text-[10px] bg-purple-50 text-purple-600 dark:bg-purple-950/40 px-2 py-0.5 rounded font-semibold">
+                            PDFs
+                          </span>
+                        )}
+                        {sub.permiteMarcaBlanca && (
+                          <span className="text-[10px] bg-amber-50 text-amber-600 dark:bg-amber-950/40 px-2 py-0.5 rounded font-semibold">
+                            M.Blanca
+                          </span>
+                        )}
+                        {sub.permiteFinanzasPro && (
+                          <span className="text-[10px] bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 px-2 py-0.5 rounded font-semibold">
+                            Fin.PRO
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 text-slate-500">
+                      + S/ {sub.montoAdicional || "0.00"}
+                    </td>
+                    <td className="p-4 font-extrabold text-slate-900 dark:text-white">
+                      S/{" "}
+                      {sub.montoTotalMensual ||
+                        sub.planBase?.precioMensual ||
+                        "0.00"}
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => handleOpenEditSuscripcion(sub)}
+                        className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                        title="Personalizar Módulos y Tarifas"
+                      >
+                        <Settings size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* MODALES */}
+      {modalPlanOpen && (
+        <EditPlanModal
+          plan={planSeleccionado}
+          formData={formDataPlan}
+          setFormData={setFormDataPlan}
+          onClose={() => setModalPlanOpen(false)}
+          onSubmit={handleSubmitPlan}
+        />
+      )}
+
+      {modalSuscripcionOpen && (
+        <EditSuscripcionModal
+          key={
+            suscripcionSeleccionada?.id || suscripcionSeleccionada?.colegioId
+          }
+          suscripcion={suscripcionSeleccionada}
+          onClose={() => setModalSuscripcionOpen(false)}
+          onSubmit={handleSubmitSuscripcion}
+        />
       )}
     </div>
   );
