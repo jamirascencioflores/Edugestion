@@ -25,6 +25,8 @@ import SetupPassword from "./pages/public/SetupPassword";
 import RecuperarPassword from "./pages/public/RecuperarPassword";
 import ResetPassword from "./pages/public/ResetPassword"; // Importación para ResetPassword
 import AnunciosGlobales from "./pages/SuperAdmin/AnunciosGlobales"; // Importación para AnunciosGlobales
+import Seguridad from "./pages/SuperAdmin/Seguridad"; // Importación para Seguridad
+import Configuracion from "./pages/SuperAdmin/Configuracion"; // Importación para Configuración
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -159,6 +161,30 @@ function App() {
               <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
                 <AdminLayout>
                   <AnunciosGlobales />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* SEGURIDAD: SUPERADMIN */}
+          <Route
+            path="/seguridad"
+            element={
+              <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+                <AdminLayout>
+                  <Seguridad />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* CONFIGURACIÓN: SUPERADMIN */}
+          <Route
+            path="/configuracion"
+            element={
+              <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+                <AdminLayout>
+                  <Configuracion />
                 </AdminLayout>
               </ProtectedRoute>
             }

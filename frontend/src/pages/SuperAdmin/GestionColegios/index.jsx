@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 // 1. Cambiamos axios por nuestra instancia configurada
 import api from "@/api/axiosConfig";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ export default function GestionColegios() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [colegioToEdit, setColegioToEdit] = useState(null);
-  const [mantenimientoActivo, setMantenimientoActivo] = useState(false);
 
   // 2. Simplificamos fetchColegios usando la instancia 'api'
   const fetchColegios = useCallback(async (showSpinner = true) => {
@@ -54,51 +53,6 @@ export default function GestionColegios() {
   const handleEdit = (colegio) => {
     setColegioToEdit(colegio);
     setIsModalOpen(true);
-  };
-
-  // ----------------------------------------------------
-  // MODO MANTENIMIENTO GLOBAL
-  // ----------------------------------------------------
-  const handleToggleMantenimiento = async () => {
-    const nuevoEstado = !mantenimientoActivo;
-
-    const result = await Swal.fire({
-      title: nuevoEstado
-        ? "¿Activar Mantenimiento Global?"
-        : "¿Desactivar Mantenimiento?",
-      text: nuevoEstado
-        ? "Ningún colegio podrá acceder al sistema. Todos verán la pantalla de mantenimiento."
-        : "El sistema volverá a la normalidad para todos los colegios.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: nuevoEstado ? "#ef4444" : "#10b981",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: nuevoEstado
-        ? "Sí, bloquear sistema"
-        : "Sí, reactivar sistema",
-      cancelButtonText: "Cancelar",
-      background: document.documentElement.classList.contains("dark")
-        ? "#1e293b"
-        : "#fff",
-      color: document.documentElement.classList.contains("dark")
-        ? "#fff"
-        : "#1e293b",
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      // Usamos la ruta relativa y dejamos que el interceptor maneje el resto
-      const response = await api.put(
-        `/auth/sistema/mantenimiento?activar=${nuevoEstado}`,
-      );
-      setMantenimientoActivo(nuevoEstado);
-      toast.success(response.data.mensaje);
-    } catch (err) {
-      toast.error(
-        err.response?.data?.error || "Error al cambiar estado del sistema",
-      );
-    }
   };
 
   // ----------------------------------------------------
@@ -208,26 +162,6 @@ export default function GestionColegios() {
               style={{ focusRingColor: "var(--color-primary)" }}
             />
           </div>
-
-          {/* NUEVO BOTÓN: MANTENIMIENTO */}
-          <button
-            onClick={handleToggleMantenimiento}
-            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium shadow-sm transition-all ${
-              mantenimientoActivo
-                ? "bg-emerald-500 hover:bg-emerald-600"
-                : "bg-red-500 hover:bg-red-600"
-            }`}
-            title="Activar/Desactivar Modo Mantenimiento"
-          >
-            {mantenimientoActivo ? (
-              <ShieldCheck size={18} />
-            ) : (
-              <ShieldAlert size={18} />
-            )}
-            <span className="hidden sm:inline">
-              {mantenimientoActivo ? "Sistema Pausado" : "Pausar Sistema"}
-            </span>
-          </button>
 
           {/* BOTÓN EXISTENTE: NUEVO COLEGIO */}
           <button

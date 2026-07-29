@@ -21,7 +21,7 @@
         </processorPath>
         <module name="ms-academico" />
       </profile>
-      <profile name="Annotation profile for ms-finanzas" enabled="true">
+      <profile name="Annotation profile for ms-auth" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />

@@ -38,7 +38,7 @@ export const menuSuperAdminSistema = [
   },
   {
     name: "Seguridad",
-    path: "/seguridad",
+    path: "/Seguridad",
     icon: <ShieldCheck size={20} />,
   },
   {
