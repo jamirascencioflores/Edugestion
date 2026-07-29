@@ -24,6 +24,7 @@ import RegistroCalificaciones from "./pages/Docentes/Calificaciones/RegistroCali
 import SetupPassword from "./pages/public/SetupPassword";
 import RecuperarPassword from "./pages/public/RecuperarPassword";
 import ResetPassword from "./pages/public/ResetPassword"; // Importación para ResetPassword
+import AnunciosGlobales from "./pages/SuperAdmin/AnunciosGlobales"; // Importación para AnunciosGlobales
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -146,6 +147,18 @@ function App() {
               <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
                 <AdminLayout>
                   <PlanesPagosSA />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ANUNCIOS GLOBALES: SUPERADMIN */}
+          <Route
+            path="/anuncios-globales"
+            element={
+              <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+                <AdminLayout>
+                  <AnunciosGlobales />
                 </AdminLayout>
               </ProtectedRoute>
             }

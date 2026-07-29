@@ -33,7 +33,7 @@ export const menuSuperAdmin = [
 export const menuSuperAdminSistema = [
   {
     name: "Anuncios Globales",
-    path: "/anuncios",
+    path: "/anuncios-globales",
     icon: <Megaphone size={20} />,
   },
   {

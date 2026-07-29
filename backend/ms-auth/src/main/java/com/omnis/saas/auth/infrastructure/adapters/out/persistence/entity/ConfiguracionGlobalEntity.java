@@ -16,6 +16,8 @@ public class ConfiguracionGlobalEntity extends AuditableEntity { // Extendemos p
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    @Builder.Default
     @Column(name = "modo_mantenimiento", nullable = false)
     private boolean modoMantenimiento = false;
 
