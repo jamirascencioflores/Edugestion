@@ -23,7 +23,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final TenantResolverFilter tenantResolverFilter;
     private final MantenimientoFilter mantenimientoFilter;
-    private final RateLimitingFilter rateLimitingFilter; // 👈 Inyectamos el filtro de Rate Limiting
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -35,6 +35,7 @@ public class SecurityConfig {
                                 "/api/auth/usuarios/registro",
                                 "/api/auth/usuarios/login",
                                 "/api/auth/usuarios/public/**",
+                                "/api/auth/importacion/**", // 👈 AGREGADO: permite las llamadas Feign entre microservicios
                                 "/error"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

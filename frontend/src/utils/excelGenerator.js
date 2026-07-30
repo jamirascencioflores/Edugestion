@@ -68,6 +68,7 @@ export const plantillaGenerators = {
       { header: "DNI Alumno", key: "dniAlumno", width: 15 },
       { header: "Nombres Alumno", key: "nombresAlumno", width: 20 },
       { header: "Apellidos Alumno", key: "apellidosAlumno", width: 20 },
+      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 }, // 👈 Columna agregada
     ];
 
     const ejemplo = {
@@ -81,6 +82,7 @@ export const plantillaGenerators = {
       dniAlumno: "87654321",
       nombresAlumno: "Maria",
       apellidosAlumno: "López Silva",
+      fechaInscripcion: "15/02/2026", // 👈 Ejemplo agregado
     };
 
     return generarExcel(
@@ -150,6 +152,7 @@ export const plantillaGenerators = {
       { header: "Grado", key: "grado", width: 15 },
       { header: "Sección", key: "seccion", width: 12 },
       { header: "DNI Apoderado", key: "dniApoderado", width: 15 },
+      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 }, // 👈 Columna agregada
     ];
 
     const ejemplo = {
@@ -159,6 +162,7 @@ export const plantillaGenerators = {
       grado: "1° Secundaria",
       seccion: "A",
       dniApoderado: "09876543",
+      fechaInscripcion: "15/02/2026", // 👈 Ejemplo agregado
     };
 
     return generarExcel(

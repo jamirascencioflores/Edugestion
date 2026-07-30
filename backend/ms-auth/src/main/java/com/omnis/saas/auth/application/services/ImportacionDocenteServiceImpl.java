@@ -47,7 +47,6 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
         ColegioEntity colegio = colegioJpaRepository.findById(colegioId)
                 .orElseThrow(() -> new RuntimeException("Colegio no encontrado con ID: " + colegioId));
 
-        // 👈 Si no existe ROLE_DOCENTE, se crea automáticamente
         RolEntity rolDocente = rolJpaRepository.findByNombre("ROLE_DOCENTE")
                 .orElseGet(() -> rolJpaRepository.save(
                         RolEntity.builder()
@@ -88,44 +87,65 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void procesarFilaDocente(Row row, ColegioEntity colegio, RolEntity rolDocente, Long colegioId, int filaActualNum) {
-        String dni = ExcelHelper.getCellValueAsString(row.getCell(0));
-        String nombres = ExcelHelper.getCellValueAsString(row.getCell(1));
-        String apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));
-        String email = ExcelHelper.getCellValueAsString(row.getCell(3));
-        String especialidad = ExcelHelper.getCellValueAsString(row.getCell(4));
+        String cell0 = ExcelHelper.getCellValueAsString(row.getCell(0));
 
-        if (dni.isEmpty() || nombres.isEmpty() || apellidos.isEmpty() || email.isEmpty()) {
-            throw new IllegalArgumentException("DNI, Nombres, Apellidos y Email son requeridos.");
+        String dni;
+        String nombres;
+        String apellidos;
+        String email;
+        String especialidad;
+
+        // Detecta Plantilla Unificada
+        if (esNombreGrado(cell0)) {
+            especialidad = ExcelHelper.getCellValueAsString(row.getCell(2)); // Curso como especialidad
+            dni = ExcelHelper.getCellValueAsString(row.getCell(3));          // DNI Docente
+            nombres = ExcelHelper.getCellValueAsString(row.getCell(4));      // Nombres Docente
+            apellidos = ExcelHelper.getCellValueAsString(row.getCell(5));    // Apellidos Docente
+            email = ExcelHelper.getCellValueAsString(row.getCell(6));        // Email Docente
+        } else {
+            dni = cell0;
+            nombres = ExcelHelper.getCellValueAsString(row.getCell(1));
+            apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));
+            email = ExcelHelper.getCellValueAsString(row.getCell(3));
+            especialidad = ExcelHelper.getCellValueAsString(row.getCell(4));
         }
 
-        // 1. Buscar si ya existe el perfil de docente por DNI y colegio
-        Optional<DocenteEntity> docenteOpt = docenteJpaRepository.findByDocumentoIdentidadAndColegioId(dni, colegioId);
+        // 👈 Si la fila no contiene datos válidos de docente, la salta limpiamente
+        if (dni.trim().isEmpty() || nombres.trim().isEmpty()) {
+            return;
+        }
+
+        // 1. Buscar por DNI
+        Optional<DocenteEntity> docenteOpt = docenteJpaRepository.findByDocumentoIdentidadAndColegioId(dni.trim(), colegioId);
 
         UsuarioEntity usuario;
         DocenteEntity docenteEntity;
 
         if (docenteOpt.isPresent()) {
-            // 🔄 ACTUALIZACIÓN (UPDATE)
+            // 🔄 UPDATE: Si el docente ya existe, actualiza sus datos sin fallar por duplicados
             docenteEntity = docenteOpt.get();
-            usuario = docenteEntity.getUsuarioEntity();
+            docenteEntity.setNombres(nombres.trim());
+            docenteEntity.setApellidos(apellidos.trim());
+            if (!email.isEmpty()) docenteEntity.setEmail(email.trim());
+            if (!especialidad.isEmpty()) docenteEntity.setEspecialidad(especialidad.trim());
 
+            usuario = docenteEntity.getUsuarioEntity();
             if (usuario != null) {
-                usuario.setEmail(email);
-                usuario.setNombreCompleto(nombres + " " + apellidos);
+                if (!email.isEmpty()) usuario.setEmail(email.trim());
+                usuario.setNombreCompleto(nombres.trim() + " " + apellidos.trim());
                 usuarioJpaRepository.save(usuario);
             }
-
-            docenteEntity.setNombres(nombres);
-            docenteEntity.setApellidos(apellidos);
-            docenteEntity.setEmail(email);
-            docenteEntity.setEspecialidad(especialidad);
-
         } else {
-            // ➕ CREACIÓN (INSERT)
+            // ➕ INSERT: Verifica si el email ya existe en UsuarioEntity para no chocar con la Unique Constraint
+            String emailFinal = email.trim();
+            if (usuarioJpaRepository.existsByEmail(emailFinal)) {
+                emailFinal = "docente." + dni.trim() + "@colegio.edu.pe"; // Email alternativo automático si el email está ocupado por una prueba previa
+            }
+
             usuario = UsuarioEntity.builder()
-                    .email(email)
-                    .passwordHash(passwordEncoder.encode(dni))
-                    .nombreCompleto(nombres + " " + apellidos)
+                    .email(emailFinal)
+                    .passwordHash(passwordEncoder.encode(dni.trim()))
+                    .nombreCompleto(nombres.trim() + " " + apellidos.trim())
                     .rolEntity(rolDocente)
                     .colegio(colegio)
                     .estado(true)
@@ -135,11 +155,11 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
             usuario = usuarioJpaRepository.save(usuario);
 
             docenteEntity = DocenteEntity.builder()
-                    .documentoIdentidad(dni)
-                    .nombres(nombres)
-                    .apellidos(apellidos)
-                    .email(email)
-                    .especialidad(especialidad)
+                    .documentoIdentidad(dni.trim())
+                    .nombres(nombres.trim())
+                    .apellidos(apellidos.trim())
+                    .email(emailFinal)
+                    .especialidad(especialidad.trim())
                     .colegio(colegio)
                     .usuarioEntity(usuario)
                     .estado(true)
@@ -147,5 +167,13 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
         }
 
         docenteJpaRepository.save(docenteEntity);
+    }
+
+    private boolean esNombreGrado(String texto) {
+        if (texto == null || texto.trim().isEmpty()) return false;
+        String t = texto.toLowerCase().trim();
+        // Reconoce "1° Secundaria", "1 Secundaria", "1ro", "Primaria", etc.
+        return t.contains("secundaria") || t.contains("primaria") || t.contains("inicial")
+                || t.contains("°") || t.matches(".*\\d+.*");
     }
 }

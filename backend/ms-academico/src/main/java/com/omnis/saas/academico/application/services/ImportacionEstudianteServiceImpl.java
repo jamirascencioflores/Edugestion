@@ -10,6 +10,7 @@ import com.omnis.saas.academico.infrastructure.adapters.out.persistence.reposito
 import com.omnis.saas.academico.infrastructure.adapters.out.persistence.repository.SpringDataSeccionRepository;
 import com.omnis.saas.academico.infrastructure.util.ExcelHelper;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -33,7 +34,7 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
     private final SpringDataEstudianteRepository estudianteRepository;
     private final SpringDataGradoRepository gradoRepository;
     private final SpringDataSeccionRepository seccionRepository;
-    private final RestTemplate restTemplate; // 👈 Inyección faltante
+    private final RestTemplate restTemplate;
 
     @Override
     public ImportacionResultadoDTO procesarExcelEstudiantes(MultipartFile file, Long colegioId) {
@@ -75,53 +76,66 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void procesarFilaEstudiante(Row row, Long colegioId, int filaActualNum) {
-        final String dni = ExcelHelper.getCellValueAsString(row.getCell(0));
-        final String nombres = ExcelHelper.getCellValueAsString(row.getCell(1));
-        final String apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));
-        final String nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(3));
-        final String nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(4));
+        String cell0 = ExcelHelper.getCellValueAsString(row.getCell(0));
+
+        String dni;
+        String nombres;
+        String apellidos;
+        String nombreGrado;
+        String nombreSeccion;
+        Cell cellFecha;
+
+        // 👈 Detección dinámica de Plantilla:
+        // Si Columna 0 contiene patrón de Grado (ej: "1° Secundaria"), es Plantilla Unificada
+        if (esNombreGrado(cell0)) {
+            nombreGrado = cell0;                                               // Columna 0
+            nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(1)); // Columna 1
+            // Columna 2 = Curso (se omite aquí)
+            // Columnas 3..6 = Docente (se omiten aquí)
+            dni = ExcelHelper.getCellValueAsString(row.getCell(7));             // Columna 7: DNI Alumno
+            nombres = ExcelHelper.getCellValueAsString(row.getCell(8));         // Columna 8: Nombres Alumno
+            apellidos = ExcelHelper.getCellValueAsString(row.getCell(9));       // Columna 9: Apellidos Alumno
+            cellFecha = row.getCell(10);                                        // Columna 10: Fecha Inscripción
+        } else {
+            // Es Plantilla Modular Paso 3 (Columna 0 es DNI Alumno)
+            dni = cell0;
+            nombres = ExcelHelper.getCellValueAsString(row.getCell(1));
+            apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));
+            nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(3));
+            nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(4));
+            // Columna 5 = DNI Apoderado (se omite por ahora)
+            cellFecha = row.getCell(6);                                         // Columna 6: Fecha Inscripción
+        }
+
+        LocalDate fechaInscripcionExcel = ExcelHelper.getCellValueAsLocalDate(cellFecha);
+        final LocalDate fechaInscripcionFinal = (fechaInscripcionExcel != null) ? fechaInscripcionExcel : LocalDate.now();
 
         if (dni.isEmpty() || nombres.isEmpty() || apellidos.isEmpty() || nombreGrado.isEmpty() || nombreSeccion.isEmpty()) {
             throw new IllegalArgumentException("DNI, Nombres, Apellidos, Grado y Sección son obligatorios.");
         }
 
-        // --- IMPRESIÓN DE DEPURACIÓN EN CONSOLA ---
         List<GradoEntity> todosLosGrados = gradoRepository.findAll();
-        System.out.println("=== DEPURACIÓN FILA " + filaActualNum + " ===");
-        System.out.println("Buscando Grado Excel: '" + nombreGrado + "' | colegioId recibido: " + colegioId);
-        System.out.println("Grados en BD actualmente:");
-        todosLosGrados.forEach(g ->
-                System.out.println("  -> ID: " + g.getId() + " | Nombre BD: '" + g.getNombre() + "' | colegioId BD: " + g.getColegioId())
-        );
 
-        // Extraer números (ej: "1° Secundaria" -> "1")
         String numExcel = nombreGrado.replaceAll("[^0-9]", "");
         String gradoLimpioExcel = normalizarTexto(nombreGrado);
 
         GradoEntity grado = todosLosGrados.stream()
-                // Tolerancia: Filtra por colegio si coincide o si colegioId en BD vino nulo
                 .filter(g -> g.getColegioId() == null || g.getColegioId().equals(colegioId))
                 .filter(g -> {
                     String numBD = g.getNombre().replaceAll("[^0-9]", "");
                     String gradoLimpioBD = normalizarTexto(g.getNombre());
 
-                    // Coincidencia 1: Por número (ej: "1" == "1")
                     if (!numExcel.isEmpty() && !numBD.isEmpty() && numExcel.equals(numBD)) {
                         return true;
                     }
-                    // Coincidencia 2: Por texto normalizado
                     return gradoLimpioBD.contains(gradoLimpioExcel) || gradoLimpioExcel.contains(gradoLimpioBD);
                 })
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Grado '" + nombreGrado + "' no existe en la estructura registrada de este colegio."));
 
-        System.out.println(">> Grado Encontrado: " + grado.getNombre() + " (ID: " + grado.getId() + ")");
-
-        // 2. Buscar Sección
         SeccionEntity seccion = seccionRepository.findByNombreAndGradoId(nombreSeccion.trim(), grado.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Sección '" + nombreSeccion + "' no existe para el grado '" + grado.getNombre() + "'."));
 
-        // 3. UPSERT Estudiante
         EstudianteEntity estudiante = estudianteRepository.findByDniAndColegioId(dni, colegioId)
                 .orElseGet(() -> EstudianteEntity.builder()
                         .dni(dni)
@@ -134,11 +148,17 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
         estudiante.setFechaNacimiento(LocalDate.of(2010, 1, 1));
         estudiante.setSeccion(seccion);
 
-        // Guardar estudiante
         EstudianteEntity estudianteGuardado = estudianteRepository.save(estudiante);
 
-        // 👈 Llama a ms-finanzas para autogenerar o completar las deudas en caja
-        asignarOCompletarDeudasEstudiante(colegioId, estudianteGuardado.getId(), grado.getId(), 2026);
+        asignarOCompletarDeudasEstudiante(colegioId, estudianteGuardado.getId(), grado.getId(), 2026, fechaInscripcionFinal);
+    }
+
+    private boolean esNombreGrado(String texto) {
+        if (texto == null || texto.trim().isEmpty()) return false;
+        String t = texto.toLowerCase().trim();
+        // Reconoce "1° Secundaria", "1 Secundaria", "1ro", "Primaria", etc.
+        return t.contains("secundaria") || t.contains("primaria") || t.contains("inicial")
+                || t.contains("°") || t.matches(".*\\d+.*");
     }
 
     private String normalizarTexto(String texto) {
@@ -152,12 +172,13 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
                 .replace("er", "");
     }
 
-    private void asignarOCompletarDeudasEstudiante(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar) {
+    private void asignarOCompletarDeudasEstudiante(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) {
         try {
             restTemplate.postForEntity(
                     "http://ms-finanzas/api/finanzas/deudas/generar-cronograma?estudianteId=" + estudianteId
                             + "&gradoId=" + gradoId
-                            + "&anioEscolar=" + anioEscolar,
+                            + "&anioEscolar=" + anioEscolar
+                            + "&fechaInscripcion=" + fechaInscripcion,
                     crearHttpEntityConHeader(colegioId),
                     Void.class
             );
@@ -166,7 +187,6 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
         }
     }
 
-    // 👈 Método auxiliar faltante para los Headers HTTP
     private HttpEntity<Void> crearHttpEntityConHeader(Long colegioId) {
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.set("X-Colegio-Id", String.valueOf(colegioId));

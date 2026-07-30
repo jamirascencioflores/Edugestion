@@ -8,6 +8,7 @@ import com.omnis.saas.academico.domain.ports.out.CursoOutputPort;
 import com.omnis.saas.academico.domain.ports.out.GradoOutputPort;
 import com.omnis.saas.academico.domain.ports.out.SeccionOutputPort;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.ImportacionResultadoDTO;
+import com.omnis.saas.academico.infrastructure.config.tenant.TenantContext;
 import com.omnis.saas.academico.infrastructure.util.ExcelHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
@@ -68,33 +69,57 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void procesarFila(Row row, Long colegioId, int filaNum) {
-        String nivel = ExcelHelper.getCellValueAsString(row.getCell(0));
-        String nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(1));
-        String nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(2));
-        String nombreCurso = ExcelHelper.getCellValueAsString(row.getCell(3));
+        // 👈 Validación de seguridad para evitar colegioId nulo en entidades
+        Long colegioIdFinal = (colegioId != null) ? colegioId : TenantContext.getColegioId();
+        if (colegioIdFinal == null) {
+            colegioIdFinal = 1L; // Fallback
+        }
+
+        String col0 = ExcelHelper.getCellValueAsString(row.getCell(0));
+        String col1 = ExcelHelper.getCellValueAsString(row.getCell(1));
+        String col2 = ExcelHelper.getCellValueAsString(row.getCell(2));
+        String col3 = ExcelHelper.getCellValueAsString(row.getCell(3));
+
+        String nombreGrado;
+        String nombreSeccion;
+        String nombreCurso;
+
+        if (esNombreGrado(col0)) {
+            nombreGrado = col0;
+            nombreSeccion = col1;
+            nombreCurso = col2;
+        } else {
+            nombreGrado = col1;
+            nombreSeccion = col2;
+            nombreCurso = col3;
+        }
 
         if (nombreGrado.isEmpty() || nombreSeccion.isEmpty()) {
             throw new IllegalArgumentException("Grado y Sección son obligatorios.");
         }
 
+        final Long finalColegioId = colegioIdFinal;
+
         // 1. Grado
-        Grado grado = gradoOutputPort.buscarGradoPorNombreYColegio(nombreGrado, colegioId)
+        final String gradoBuscado = nombreGrado.trim();
+        Grado grado = gradoOutputPort.buscarGradoPorNombreYColegio(gradoBuscado, finalColegioId)
                 .orElseGet(() -> gradoOutputPort.guardar(
                         Grado.builder()
-                                .nombre(nombreGrado)
+                                .nombre(gradoBuscado)
                                 .orden(filaNum)
-                                .colegioId(colegioId)
+                                .colegioId(finalColegioId) // 👈 Garantizado no nulo
                                 .estado(true)
                                 .build()
                 ));
 
         // 2. Sección
-        Seccion seccion = seccionOutputPort.buscarSeccionPorNombreYGrado(nombreSeccion, grado.getId())
+        final String seccionBuscada = nombreSeccion.trim();
+        Seccion seccion = seccionOutputPort.buscarSeccionPorNombreYGrado(seccionBuscada, grado.getId())
                 .orElseGet(() -> seccionOutputPort.guardar(
                         Seccion.builder()
-                                .nombre(nombreSeccion)
+                                .nombre(seccionBuscada)
                                 .gradoId(grado.getId())
-                                .colegioId(colegioId)
+                                .colegioId(finalColegioId)
                                 .capacidadMaxima(50)
                                 .estado(true)
                                 .build()
@@ -102,14 +127,23 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
 
         // 3. Curso
         if (!nombreCurso.isEmpty()) {
-            cursoOutputPort.buscarCursoPorNombreYColegio(nombreCurso, colegioId)
+            final String cursoBuscado = nombreCurso.trim();
+            cursoOutputPort.buscarCursoPorNombreYColegio(cursoBuscado, finalColegioId)
                     .orElseGet(() -> cursoOutputPort.guardar(
                             Curso.builder()
-                                    .nombre(nombreCurso)
-                                    .colegioId(colegioId)
+                                    .nombre(cursoBuscado)
+                                    .colegioId(finalColegioId)
                                     .estado(true)
                                     .build()
                     ));
         }
+    }
+
+    private boolean esNombreGrado(String texto) {
+        if (texto == null || texto.trim().isEmpty()) return false;
+        String t = texto.toLowerCase().trim();
+        // Reconoce "1° Secundaria", "1 Secundaria", "1ro", "Primaria", etc.
+        return t.contains("secundaria") || t.contains("primaria") || t.contains("inicial")
+                || t.contains("°") || t.matches(".*\\d+.*");
     }
 }

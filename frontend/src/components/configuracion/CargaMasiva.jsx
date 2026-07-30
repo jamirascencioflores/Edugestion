@@ -3,7 +3,7 @@ import { importacionApi } from "../../api/importacionApi";
 import { DropzoneExcel } from "./DropzoneExcel";
 import { GuiaColumnas } from "./GuiaColumnas";
 import { ResumenResultado } from "./ResumenResultado";
-import { Download, Zap, Layers } from "lucide-react";
+import { Download, Zap, Layers, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { plantillaGenerators } from "../../utils/excelGenerator";
 import Swal from "sweetalert2";
@@ -44,7 +44,6 @@ export const CargaMasiva = ({ colegioId = 1 }) => {
         throw new Error("Tipo de plantilla no válido");
       }
 
-      // Ejecuta la generación local mediante ExcelJS
       await plantilla.fn();
 
       toast.success(`Plantilla descargada: ${plantilla.name}`, { id: toastId });
@@ -63,7 +62,6 @@ export const CargaMasiva = ({ colegioId = 1 }) => {
       return;
     }
 
-    // Confirmación visual con SweetAlert2 antes de procesar
     const confirm = await Swal.fire({
       title: "¿Procesar archivo?",
       text: `Se importarán los datos de "${archivo.name}"`,
@@ -99,7 +97,6 @@ export const CargaMasiva = ({ colegioId = 1 }) => {
       setResultado(res);
       toast.success("Procesamiento finalizado", { id: toastId });
 
-      // Feedback visual del resultado final
       if (res.errores && res.errores.length > 0) {
         Swal.fire({
           title: "Proceso completado con observaciones",
@@ -146,6 +143,24 @@ export const CargaMasiva = ({ colegioId = 1 }) => {
           Selecciona el método de carga preferido para tu institución.
         </p>
       </div>
+
+      {/* Banner Informativo / Recomendación de Tarifarios */}
+      {(modo === "UNIFICADO" || (modo === "MODULAR" && pasoModular === 3)) && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-start gap-3 text-amber-800 dark:text-amber-200">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="text-sm">
+            <p className="font-semibold mb-0.5">
+              Recomendación antes de cargar estudiantes
+            </p>
+            <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+              Para que el cronograma de matrícula y pensiones se genere
+              automáticamente en el <strong>Módulo de Caja</strong>, te
+              sugerimos haber configurado primero el año escolar en{" "}
+              <strong>Tarifarios</strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* TABS DINÁMICOS */}
       <div className="grid grid-cols-2 gap-3 mb-6 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">

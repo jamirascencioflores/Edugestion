@@ -25,4 +25,6 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioEntity, UUID>
     Optional<UsuarioEntity> findByTokenActivacion(String tokenActivacion);
 
     Optional<UsuarioEntity> findByTokenRecuperacion(String tokenRecuperacion);
+
+    boolean existsByEmail(String email);
 }

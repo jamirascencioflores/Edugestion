@@ -1,15 +1,18 @@
 package com.omnis.saas.academico.application.services;
 
-import com.omnis.saas.academico.domain.ports.in.ImportacionEstudianteUseCase;
-import com.omnis.saas.academico.domain.ports.in.ImportacionEstructuraUseCase;
 import com.omnis.saas.academico.domain.ports.in.ImportacionUnificadaUseCase;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.ImportacionResultadoDTO;
 import com.omnis.saas.academico.infrastructure.adapters.out.feign.AuthDocenteFeignClient;
+import com.omnis.saas.academico.infrastructure.util.ExcelHelper;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,44 +20,52 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ImportacionUnificadaServiceImpl implements ImportacionUnificadaUseCase {
 
-    private final ImportacionEstructuraUseCase importacionEstructuraUseCase;
-    private final ImportacionEstudianteUseCase importacionEstudianteUseCase;
+    private final ImportacionEstructuraServiceImpl importacionEstructuraService;
+    private final ImportacionEstudianteServiceImpl importacionEstudianteService;
     private final AuthDocenteFeignClient authDocenteFeignClient;
 
     @Override
-    @Transactional
     public ImportacionResultadoDTO procesarExcelMaestro(MultipartFile file, Long colegioId) {
-        List<String> todosLosErrores = new ArrayList<>();
-        int totalProcesados = 0;
-        int totalExitosos = 0;
-        int totalFallidos = 0;
+        List<String> errores = new ArrayList<>();
+        int exitosos = 0;
+        int fallidos = 0;
+        int filaNum = 0;
 
-        // 1. Fase 1: Importar Estructura (Grados, Secciones y Cursos)
-        ImportacionResultadoDTO resEstructura = importacionEstructuraUseCase.procesarExcelEstructura(file, colegioId);
-        todosLosErrores.addAll(resEstructura.getErrores());
-
-        // 2. Fase 2: Importar Docentes (vía Feign a ms-auth)
+        // 1. Enviar primero todo el archivo a ms-auth para registrar los docentes sin interrumpir ms-academico
         try {
-            ImportacionResultadoDTO resDocentes = authDocenteFeignClient.importarDocentes(file, colegioId);
-            todosLosErrores.addAll(resDocentes.getErrores());
+            authDocenteFeignClient.importarDocentes(file, colegioId);
         } catch (Exception e) {
-            todosLosErrores.add("Error al sincronizar docentes con el servicio de autenticación: " + e.getMessage());
+            System.err.println("Aviso docentes: " + e.getMessage());
         }
 
-        // 3. Fase 3: Importar Estudiantes
-        ImportacionResultadoDTO resEstudiantes = importacionEstudianteUseCase.procesarExcelEstudiantes(file, colegioId);
-        todosLosErrores.addAll(resEstudiantes.getErrores());
+        // 2. Procesar Estructura y Estudiantes fila por fila en ms-academico
+        try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-        // Consolidación de métricas de procesamiento
-        totalProcesados = Math.max(resEstructura.getTotalFilasProcesadas(), resEstudiantes.getTotalFilasProcesadas());
-        totalFallidos = todosLosErrores.size();
-        totalExitosos = Math.max(0, totalProcesados - totalFallidos);
+            for (Row row : sheet) {
+                filaNum++;
+                if (filaNum == 1) continue; // Saltar cabecera
+                if (ExcelHelper.esFilaVacia(row)) continue;
+
+                try {
+                    // Cada fila se guarda en su propia transacción aislada
+                    importacionEstructuraService.procesarFila(row, colegioId, filaNum);
+                    importacionEstudianteService.procesarFilaEstudiante(row, colegioId, filaNum);
+                    exitosos++;
+                } catch (Exception e) {
+                    fallidos++;
+                    errores.add("Fila " + filaNum + ": " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al procesar el archivo unificado: " + e.getMessage());
+        }
 
         return ImportacionResultadoDTO.builder()
-                .totalFilasProcesadas(totalProcesados)
-                .registrosExitosos(totalExitosos)
-                .registrosFallidos(totalFallidos)
-                .errores(todosLosErrores)
+                .totalFilasProcesadas(filaNum > 0 ? filaNum - 1 : 0)
+                .registrosExitosos(exitosos)
+                .registrosFallidos(fallidos)
+                .errores(errores)
                 .build();
     }
 }

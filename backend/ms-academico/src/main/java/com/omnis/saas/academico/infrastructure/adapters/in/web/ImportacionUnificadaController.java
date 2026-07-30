@@ -2,6 +2,7 @@ package com.omnis.saas.academico.infrastructure.adapters.in.web;
 
 import com.omnis.saas.academico.domain.ports.in.ImportacionUnificadaUseCase;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.ImportacionResultadoDTO;
+import com.omnis.saas.academico.infrastructure.config.tenant.TenantContext;
 import com.omnis.saas.academico.infrastructure.util.ExcelHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -24,16 +25,18 @@ public class ImportacionUnificadaController {
     private final ImportacionUnificadaUseCase importacionUnificadaUseCase;
 
     @PostMapping("/maestro")
-    public ResponseEntity<?> importarExcelMaestro(
+    public ResponseEntity<ImportacionResultadoDTO> importarExcelMaestro(
             @RequestParam("file") MultipartFile file,
-            @RequestHeader(value = "X-Tenant-Id", required = false) Long colegioId) {
+            @RequestHeader(value = "X-Colegio-Id", required = false) Long colegioIdHeader) {
 
-        if (!ExcelHelper.esFormatoExcel(file)) {
-            return ResponseEntity.badRequest().body("Por favor, suba un archivo Excel válido (.xlsx).");
+        // 👈 Fallback: si no viene por Header, intenta tomarlo del TenantContext
+        Long colegioId = (colegioIdHeader != null) ? colegioIdHeader : TenantContext.getColegioId();
+
+        if (colegioId == null) {
+            colegioId = 1L; // Fallback por defecto para desarrollo si es necesario
         }
 
-        ImportacionResultadoDTO resultado = importacionUnificadaUseCase.procesarExcelMaestro(file, colegioId);
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(importacionUnificadaUseCase.procesarExcelMaestro(file, colegioId));
     }
 
     @GetMapping("/plantilla/maestro")
