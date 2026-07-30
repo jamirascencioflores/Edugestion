@@ -1,6 +1,5 @@
 // src/pages/Director/GestionPersonal/index.jsx
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import { Plus, Search, Users } from "lucide-react";
 import Swal from "sweetalert2"; // <-- Importamos SweetAlert2
 import { toast } from "sonner"; // <-- Importamos Sonner
@@ -15,21 +14,19 @@ export default function Docentes() {
   const [loading, setLoading] = useState(true);
   const [docenteEdit, setDocenteEdit] = useState(null); // <-- Opcional: Preparado por si quieres editar docentes luego
 
+  // ✅ Correcto (usa la instancia centralizada 'api'):
   const fetchDocentes = useCallback(async () => {
     try {
-      const token = localStorage.getItem("jwt_token");
-      const res = await axios.get("http://localhost:8080/api/auth/docentes", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/auth/docentes");
       setDocentes(res.data);
     } catch (error) {
       console.error("Error al obtener docentes:", error);
-      toast.error("Error al cargar la lista de docentes"); // <-- Toast de error
+      toast.error("Error al cargar la lista de docentes");
     } finally {
       setLoading(false);
     }
   }, []);
-
+  
   const handleToggleEstado = async (docente) => {
     const result = await Swal.fire({
       title: "¿Cambiar estado?",

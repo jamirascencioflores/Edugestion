@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +30,7 @@ public class ColegioServiceImpl implements ColegioUseCase {
     private final UsuarioRepositoryPort usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final DocenteRepositoryPort docenteRepository;
+    private final EmailServicePort emailService; // 👈 1. INYECTAMOS EL PUERTO DE EMAIL
 
     @Override
     @Transactional
@@ -54,18 +56,35 @@ public class ColegioServiceImpl implements ColegioUseCase {
         Rol rolResponsable = rolRepository.findByNombre("ADMIN_COLEGIO")
                 .orElseThrow(() -> new RuntimeException("El rol ADMIN_COLEGIO no existe"));
 
+        // 👈 2. GENERAMOS UN TOKEN ÚNICO DE ACTIVACIÓN
+        String tokenActivacion = UUID.randomUUID().toString();
+
         Usuario responsable = Usuario.builder()
                 .nombreCompleto(dto.nombreResponsable())
                 .email(dto.emailResponsable())
                 .passwordHash(passwordEncoder.encode(dto.subdominio()))
-                .colegio(nuevoColegio) // Usa dominio puro
-                .rol(rolResponsable)   // Usa dominio puro
+                .colegio(nuevoColegio)
+                .rol(rolResponsable)
                 .estado(true)
                 .debeCambiarPassword(true)
+                .tokenActivacion(tokenActivacion) // 👈 AGREGA ESTA LÍNEA AQUÍ
                 .createdAt(LocalDateTime.now())
                 .build();
 
         usuarioRepository.save(responsable);
+
+        // 👈 3. DISPARAR EL ENVÍO DEL CORREO A MAILTRAP
+        try {
+            emailService.enviarInvitacion(
+                    dto.emailResponsable(),
+                    dto.nombreResponsable(),
+                    tokenActivacion,
+                    dto.subdominio()
+            );
+        } catch (Exception e) {
+            // Se captura el log para evitar revertir el registro del colegio si falla la red SMTP
+            System.err.println("⚠ No se pudo enviar el correo de activación: " + e.getMessage());
+        }
 
         return nuevoColegio;
     }

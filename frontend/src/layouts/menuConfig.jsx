@@ -101,17 +101,21 @@ export const menuDocente = [
     path: "/calificaciones",
     icon: <Award size={20} />,
   },
-  { name: "Materiales", path: "/materiales", icon: <BookOpen size={20} /> },
+  { name: "Materiales", 
+    path: "/materiales", 
+    icon: <BookOpen size={20} /> 
+  },
 ];
 
 // --- MENÚS SISTEMA (ADMIN_COLEGIO) ---
 export const menuSistema = [
   {
     name: "Configuración",
-    path: "/configuracion",
+    path: "/configuracionpage",
     icon: <Settings size={20} />,
   },
-  { name: "Seguridad", path: "/seguridad", icon: <ShieldCheck size={20} /> },
+  { name: "Seguridad",
+    path: "/seguridadpage",
+    icon: <ShieldCheck size={20} /> 
+  },
 ];
-
-

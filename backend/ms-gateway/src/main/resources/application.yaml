@@ -39,7 +39,7 @@ spring:
         - id: academico-route
           uri: lb://ms-academico
           predicates:
-            - Path=/api/academicos/**
+            - Path=/api/academico/**, /api/academicos/**
           filters:
             - AuthenticationFilter
 

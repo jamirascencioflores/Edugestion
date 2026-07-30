@@ -26,6 +26,7 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
     private final EmailServicePort emailServicePort;
 
     @Override
+    @Transactional
     public Usuario registrarNuevoUsuario(Usuario usuario, String nombreRol) {
         if (usuarioRepositoryPort.buscarPorEmail(usuario.getEmail()).isPresent()) {
             throw new RuntimeException("El email ya está registrado");
@@ -48,11 +49,17 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
         // 3. Guardar en BD
         Usuario usuarioGuardado = usuarioRepositoryPort.guardar(usuario);
 
-        // 4. Enviar correo de invitación
+        // 4. Extraer el subdominio de la relación del Colegio
+        String subdominio = (usuarioGuardado.getColegio() != null)
+                ? usuarioGuardado.getColegio().getSubdominio()
+                : "app";
+
+        // 5. Enviar correo de invitación con el subdominio correcto
         emailServicePort.enviarInvitacion(
                 usuarioGuardado.getEmail(),
                 usuarioGuardado.getNombreCompleto(),
-                tokenActivacion
+                tokenActivacion,
+                subdominio
         );
 
         return usuarioGuardado;
@@ -82,7 +89,7 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
         String token = tokenProviderPort.generarToken(usuario);
         return new AuthResponseDTO(
                 token,
-                usuario.getDebeCambiarPassword() != null ? usuario.getDebeCambiarPassword() : false
+                Boolean.TRUE.equals(usuario.getDebeCambiarPassword())
         );
     }
 
@@ -125,18 +132,14 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
         usuario.setExpiracionTokenRecuperacion(java.time.LocalDateTime.now().plusMinutes(15));
         usuarioRepositoryPort.guardar(usuario);
 
-        // 6. Usamos tu puerto existente para enviar el correo
         emailServicePort.enviarCorreoRecuperacion(usuario.getEmail(), usuario.getNombreCompleto(), token);
     }
 
     @Override
+    @Transactional
     public void restablecerPassword(String token, String nuevaPassword) {
-        // Puedes reutilizar tu lógica de activación si valida el token de recuperación,
-        // o implementar la búsqueda por tokenRecuperacion:
         Usuario usuario = usuarioRepositoryPort.findByTokenRecuperacion(token)
                 .orElseThrow(() -> new RuntimeException("El enlace de recuperación es inválido o ha expirado."));
-
-        // Validar expiración si manejas fecha de expiración del token...
 
         usuario.setPasswordHash(passwordEncoder.encode(nuevaPassword));
         usuario.setTokenRecuperacion(null);

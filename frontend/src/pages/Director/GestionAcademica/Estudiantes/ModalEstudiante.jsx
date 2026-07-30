@@ -1,14 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X, Save } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
-export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
-  const anioActual = new Date().getFullYear();
-  // Obtenemos la fecha de hoy en formato YYYY-MM-DD
-  const hoy = new Date().toISOString().split("T")[0];
+// Helper fuera del componente
+const obtenerDatosFormulario = (estudiante, hoy, anioActual) => {
+  if (estudiante) {
+    const fechaNacFormateada = estudiante.fechaNacimiento
+      ? new Date(estudiante.fechaNacimiento).toISOString().split("T")[0]
+      : "";
 
-  const [formData, setFormData] = useState({
+    const fechaInscFormateada = estudiante.fechaInscripcion
+      ? new Date(estudiante.fechaInscripcion).toISOString().split("T")[0]
+      : hoy;
+
+    return {
+      nombres: estudiante.nombres || "",
+      apellidos: estudiante.apellidos || "",
+      dni: estudiante.dni || "",
+      fechaNacimiento: fechaNacFormateada,
+      emailInstitucional: estudiante.emailInstitucional || "",
+      seccionId: estudiante.seccionId || "",
+      gradoId: estudiante.gradoId || "",
+      anioEscolar: estudiante.anioEscolar || anioActual,
+      fechaInscripcion: fechaInscFormateada,
+      estado: estudiante.estado ?? true,
+      apoderadoIds: estudiante.apoderadoIds || [],
+    };
+  }
+
+  return {
     nombres: "",
     apellidos: "",
     dni: "",
@@ -17,20 +38,43 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     seccionId: "",
     gradoId: "",
     anioEscolar: anioActual,
-    fechaInscripcion: hoy, // <- NUEVO: Fecha de matrícula
+    fechaInscripcion: hoy,
     estado: true,
     apoderadoIds: [],
-  });
+  };
+};
 
-  const [initialData, setInitialData] = useState(null);
+export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
+  const anioActual = useMemo(() => new Date().getFullYear(), []);
+  const hoy = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  // Control para reajustar el estado al cambiar la prop 'estudiante' sin usar useEffect
+  const [prevEstudiante, setPrevEstudiante] = useState(estudiante);
+
+  const [formData, setFormData] = useState(() =>
+    obtenerDatosFormulario(estudiante, hoy, anioActual),
+  );
+  const [initialData, setInitialData] = useState(() =>
+    obtenerDatosFormulario(estudiante, hoy, anioActual),
+  );
+
+  // Sincronización patrón React oficial: durante el render si cambió el 'estudiante'
+  if (estudiante !== prevEstudiante) {
+    setPrevEstudiante(estudiante);
+    const dataFormatted = obtenerDatosFormulario(estudiante, hoy, anioActual);
+    setFormData(dataFormatted);
+    setInitialData(dataFormatted);
+  }
 
   const [grados, setGrados] = useState([]);
   const [secciones, setSecciones] = useState([]);
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
-
   const [loading, setLoading] = useState(false);
 
+  // Cargar grados y secciones al montar
   useEffect(() => {
+    let isMounted = true;
+
     const fetchDatosAcademicos = async () => {
       try {
         const [gradosRes, seccionesRes] = await Promise.all([
@@ -38,17 +82,20 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
           api.get("/academicos/secciones"),
         ]);
 
-        setGrados(gradosRes.data);
-        setSecciones(seccionesRes.data);
+        if (isMounted) {
+          setGrados(gradosRes.data);
+          setSecciones(seccionesRes.data);
 
-        if (estudiante && estudiante.seccionId) {
-          const seccionDelAlumno = seccionesRes.data.find(
-            (s) => s.id === estudiante.seccionId,
-          );
-          const idGrado =
-            seccionDelAlumno?.gradoId || seccionDelAlumno?.grado?.id;
-          if (idGrado) {
-            setGradoSeleccionado(idGrado);
+          if (estudiante?.seccionId) {
+            const seccionDelAlumno = seccionesRes.data.find(
+              (s) => s.id === estudiante.seccionId,
+            );
+            const idGrado =
+              seccionDelAlumno?.gradoId || seccionDelAlumno?.grado?.id;
+            if (idGrado) {
+              setGradoSeleccionado(idGrado);
+              setFormData((prev) => ({ ...prev, gradoId: idGrado }));
+            }
           }
         }
       } catch {
@@ -58,39 +105,25 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
 
     fetchDatosAcademicos();
 
-    if (estudiante) {
-      const fechaFormateada = estudiante.fechaNacimiento
-        ? new Date(estudiante.fechaNacimiento).toISOString().split("T")[0]
-        : "";
+    return () => {
+      isMounted = false;
+    };
+  }, [estudiante?.seccionId]);
 
-      const data = {
-        nombres: estudiante.nombres,
-        apellidos: estudiante.apellidos,
-        dni: estudiante.dni,
-        fechaNacimiento: fechaFormateada,
-        emailInstitucional: estudiante.emailInstitucional || "",
-        seccionId: estudiante.seccionId || "",
-        gradoId: "",
-        anioEscolar: anioActual,
-        fechaInscripcion: hoy,
-        estado: estudiante.estado,
-        apoderadoIds: estudiante.apoderadoIds || [],
-      };
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData(data);
-      setInitialData(data);
-    } else {
-      setInitialData({ ...formData });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estudiante]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  useEffect(() => {
-    if (gradoSeleccionado) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData((prev) => ({ ...prev, gradoId: gradoSeleccionado }));
-    }
-  }, [gradoSeleccionado]);
+  const handleGradoChange = (e) => {
+    const selectedId = e.target.value;
+    setGradoSeleccionado(selectedId);
+    setFormData((prev) => ({
+      ...prev,
+      gradoId: selectedId,
+      seccionId: "",
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,11 +160,6 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
   };
 
   const seccionesFiltradas = secciones.filter(
@@ -237,29 +265,26 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
                 required
                 min="2020"
                 max="2100"
-                disabled={!!estudiante}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
                 value={formData.anioEscolar}
                 onChange={handleChange}
               />
             </div>
 
-            {/* Fecha de inscripción (Solo visible al crear) */}
-            {!estudiante && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Fecha de Inscripción
-                </label>
-                <input
-                  type="date"
-                  name="fechaInscripcion"
-                  required
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none scheme-light dark:scheme-dark"
-                  value={formData.fechaInscripcion}
-                  onChange={handleChange}
-                />
-              </div>
-            )}
+            {/* Fecha de Inscripción */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Fecha de Inscripción
+              </label>
+              <input
+                type="date"
+                name="fechaInscripcion"
+                required
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none scheme-light dark:scheme-dark"
+                value={formData.fechaInscripcion}
+                onChange={handleChange}
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -268,14 +293,7 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
               <select
                 className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
                 value={gradoSeleccionado}
-                onChange={(e) => {
-                  setGradoSeleccionado(e.target.value);
-                  setFormData({
-                    ...formData,
-                    seccionId: "",
-                    gradoId: e.target.value,
-                  });
-                }}
+                onChange={handleGradoChange}
               >
                 <option value="">Seleccione un grado...</option>
                 {grados.map((g) => (

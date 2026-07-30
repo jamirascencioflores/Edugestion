@@ -27,6 +27,7 @@ import ResetPassword from "./pages/public/ResetPassword"; // Importación para R
 import AnunciosGlobales from "./pages/SuperAdmin/AnunciosGlobales"; // Importación para AnunciosGlobales
 import Seguridad from "./pages/SuperAdmin/Seguridad"; // Importación para Seguridad
 import Configuracion from "./pages/SuperAdmin/Configuracion"; // Importación para Configuración
+import ConfiguracionPage from "./pages/public/ConfiguracionPage";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -294,6 +295,17 @@ function App() {
               <ProtectedRoute allowedRoles={["ADMIN_COLEGIO"]}>
                 <AdminLayout>
                   <CajaIndex />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/configuracionpage"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN_COLEGIO"]}>
+                <AdminLayout>
+                  <ConfiguracionPage />
                 </AdminLayout>
               </ProtectedRoute>
             }

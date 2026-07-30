@@ -2,6 +2,7 @@ package com.omnis.saas.finanzas.infrastructure.adapters.in.web;
 
 import com.omnis.saas.finanzas.domain.model.Deuda;
 import com.omnis.saas.finanzas.domain.ports.in.DeudaUseCase;
+import com.omnis.saas.finanzas.domain.ports.in.GenerarDeudasEstudianteUseCase; // 👈 1. Importar el nuevo caso de uso
 import com.omnis.saas.finanzas.infrastructure.adapters.in.web.dto.DeudaResponseDTO;
 import com.omnis.saas.finanzas.infrastructure.adapters.in.web.dto.PagoRequest;
 import com.omnis.saas.finanzas.infrastructure.adapters.in.web.dto.ReversionRequest;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -17,6 +19,7 @@ import java.util.List;
 public class DeudaController {
 
     private final DeudaUseCase deudaUseCase;
+    private final GenerarDeudasEstudianteUseCase generarDeudasEstudianteUseCase; // 👈 2. Inyectar la interfaz
 
     // 1. Listar deudas de un estudiante específico
     @GetMapping("/estudiante/{estudianteId}")
@@ -69,6 +72,24 @@ public class DeudaController {
             @RequestBody ReversionRequest request) {
 
         deudaUseCase.revertirPago(id, request.motivo());
+        return ResponseEntity.ok().build();
+    }
+
+    // 👈 3. NUEVO ENDPOINT PARA GENERACIÓN AUTOMÁTICA DE CRONOGRAMA
+    @PostMapping("/generar-cronograma")
+    public ResponseEntity<Void> generarCronograma(
+            @RequestHeader("X-Colegio-Id") Long colegioId,
+            @RequestParam("estudianteId") Long estudianteId,
+            @RequestParam("gradoId") Long gradoId,
+            @RequestParam(value = "anioEscolar", defaultValue = "2026") Integer anioEscolar) {
+
+        generarDeudasEstudianteUseCase.generarPensionesAnuales(
+                colegioId,
+                estudianteId,
+                gradoId,
+                anioEscolar,
+                LocalDate.now()
+        );
         return ResponseEntity.ok().build();
     }
 }

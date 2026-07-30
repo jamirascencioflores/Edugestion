@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +32,6 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
     private final CursoOutputPort cursoOutputPort;
 
     @Override
-    @Transactional
     public ImportacionResultadoDTO procesarExcelEstructura(MultipartFile file, Long colegioId) {
         List<String> errores = new ArrayList<>();
         int exitosos = 0;
@@ -47,55 +47,11 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
                 if (ExcelHelper.esFilaVacia(row)) continue;
 
                 try {
-                    String nivel = ExcelHelper.getCellValueAsString(row.getCell(0));
-                    String nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(1));
-                    String nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(2));
-                    String nombreCurso = ExcelHelper.getCellValueAsString(row.getCell(3));
-
-                    if (nombreGrado.isEmpty() || nombreSeccion.isEmpty()) {
-                        errores.add("Fila " + filaActualNum + ": Grado y Sección son obligatorios.");
-                        fallidos++;
-                        continue;
-                    }
-
-                    final int ordenCalculado = filaActualNum;
-
-                    // 1. Resolver o Crear Grado
-                    Grado grado = gradoOutputPort.buscarGradoPorNombreYColegio(nombreGrado, colegioId)
-                            .orElseGet(() -> gradoOutputPort.guardar(
-                                    Grado.builder()
-                                            .nombre(nombreGrado)
-                                            .orden(ordenCalculado)
-                                            .colegioId(colegioId)
-                                            .estado(true)
-                                            .build()
-                            ));
-
-                    // 2. Resolver o Crear Sección
-                    Seccion seccion = seccionOutputPort.buscarSeccionPorNombreYGrado(nombreSeccion, grado.getId())
-                            .orElseGet(() -> seccionOutputPort.guardar(
-                                    Seccion.builder()
-                                            .nombre(nombreSeccion)
-                                            .gradoId(grado.getId())
-                                            .build()
-                            ));
-
-                    // 3. Resolver o Crear Curso por Colegio
-                    if (!nombreCurso.isEmpty()) {
-                        cursoOutputPort.buscarCursoPorNombreYColegio(nombreCurso, colegioId)
-                                .orElseGet(() -> cursoOutputPort.guardar(
-                                        Curso.builder()
-                                                .nombre(nombreCurso)
-                                                .colegioId(colegioId)
-                                                .estado(true)
-                                                .build()
-                                ));
-                    }
-
+                    procesarFila(row, colegioId, filaActualNum);
                     exitosos++;
                 } catch (Exception e) {
                     fallidos++;
-                    errores.add("Fila " + filaActualNum + ": Error procesando fila - " + e.getMessage());
+                    errores.add("Fila " + filaActualNum + ": " + e.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -108,5 +64,52 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
                 .registrosFallidos(fallidos)
                 .errores(errores)
                 .build();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void procesarFila(Row row, Long colegioId, int filaNum) {
+        String nivel = ExcelHelper.getCellValueAsString(row.getCell(0));
+        String nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(1));
+        String nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(2));
+        String nombreCurso = ExcelHelper.getCellValueAsString(row.getCell(3));
+
+        if (nombreGrado.isEmpty() || nombreSeccion.isEmpty()) {
+            throw new IllegalArgumentException("Grado y Sección son obligatorios.");
+        }
+
+        // 1. Grado
+        Grado grado = gradoOutputPort.buscarGradoPorNombreYColegio(nombreGrado, colegioId)
+                .orElseGet(() -> gradoOutputPort.guardar(
+                        Grado.builder()
+                                .nombre(nombreGrado)
+                                .orden(filaNum)
+                                .colegioId(colegioId)
+                                .estado(true)
+                                .build()
+                ));
+
+        // 2. Sección
+        Seccion seccion = seccionOutputPort.buscarSeccionPorNombreYGrado(nombreSeccion, grado.getId())
+                .orElseGet(() -> seccionOutputPort.guardar(
+                        Seccion.builder()
+                                .nombre(nombreSeccion)
+                                .gradoId(grado.getId())
+                                .colegioId(colegioId)
+                                .capacidadMaxima(50)
+                                .estado(true)
+                                .build()
+                ));
+
+        // 3. Curso
+        if (!nombreCurso.isEmpty()) {
+            cursoOutputPort.buscarCursoPorNombreYColegio(nombreCurso, colegioId)
+                    .orElseGet(() -> cursoOutputPort.guardar(
+                            Curso.builder()
+                                    .nombre(nombreCurso)
+                                    .colegioId(colegioId)
+                                    .estado(true)
+                                    .build()
+                    ));
+        }
     }
 }

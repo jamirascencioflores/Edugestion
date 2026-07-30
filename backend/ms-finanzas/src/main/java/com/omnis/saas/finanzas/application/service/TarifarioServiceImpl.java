@@ -5,6 +5,7 @@ import com.omnis.saas.finanzas.domain.ports.in.TarifarioUseCase;
 import com.omnis.saas.finanzas.domain.ports.out.TarifarioRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service

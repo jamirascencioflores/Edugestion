@@ -35,8 +35,7 @@ public class CursoEntity {
     @Builder.Default
     private Boolean estado = true;
 
-    // --- NUEVA RELACIÓN ---
-    // Un curso pertenece a una sola Área (ej. "Matemática" pertenece a "Ciencias")
+    // --- RELACIÓN ÁREA ACADÉMICA ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id")
     private AreaAcademicaEntity areaAcademica;

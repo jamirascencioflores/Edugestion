@@ -26,7 +26,7 @@ public class ImportacionEstudianteController {
     @PostMapping("/estudiantes")
     public ResponseEntity<?> importarEstudiantes(
             @RequestParam("file") MultipartFile file,
-            @RequestHeader(value = "X-Tenant-Id", required = false) Long colegioId) {
+            @RequestHeader(value = "X-Colegio-Id", required = false) Long colegioId) { // 👈 Cambiado a X-Colegio-Id
 
         if (!ExcelHelper.esFormatoExcel(file)) {
             return ResponseEntity.badRequest().body("Por favor, suba un archivo Excel válido (.xlsx).");

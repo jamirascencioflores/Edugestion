@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import api from "@/api/axiosConfig"; // Ajusta la ruta a tu cliente axios
+import { useSearchParams } from "react-router-dom";
+import api from "@/api/axiosConfig";
 import { Lock, AlertCircle, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export default function SetupPassword() {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token"); // Extrae el token de la URL
-  const navigate = useNavigate();
+  const token = searchParams.get("token");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,19 +34,36 @@ export default function SetupPassword() {
 
     setLoading(true);
     try {
-      // Llamada al endpoint público de activación pasándole el token y la nueva clave
-      await api.post("/auth/usuarios/public/activar-cuenta", {
+      // 1. Llamada al endpoint público de activación
+      const res = await api.post("/auth/usuarios/public/activar-cuenta", {
         token: token,
         nuevaPassword: password,
       });
 
       setExito(true);
+
+      // 2. Redirección forzada hacia el subdominio correcto
       setTimeout(() => {
-        navigate("/login");
-      }, 3000);
+        // Intentamos obtener el subdominio de la respuesta del backend o del host actual
+        const subdominioResp = res.data?.subdominio;
+        const currentHost = window.location.hostname; // Ej: "elbuenmaestro.localhost" o "localhost"
+        const port = window.location.port ? `:${window.location.port}` : "";
+
+        if (subdominioResp) {
+          // Si el backend nos da el subdominio explícito:
+          window.location.href = `http://${subdominioResp}.localhost${port}/login`;
+        } else if (currentHost.includes(".")) {
+          // Si ya estamos navegando sobre el subdominio (ej: elbuenmaestro.localhost)
+          window.location.href = `http://${currentHost}${port}/login`;
+        } else {
+          // Fallback en caso de estar en el dominio raíz puro
+          window.location.href = "/login";
+        }
+      }, 2500);
     } catch (err) {
       setError(
         err.response?.data?.mensaje ||
+          err.response?.data?.error ||
           "Ocurrió un error al activar tu cuenta. El enlace podría estar vencido.",
       );
     } finally {
@@ -83,7 +99,7 @@ export default function SetupPassword() {
             <CheckCircle2 className="mx-auto w-10 h-10 text-green-600" />
             <p className="font-semibold">¡Cuenta activada con éxito!</p>
             <p className="text-xs text-green-600">
-              Redirigiendo al inicio de sesión...
+              Redirigiendo al inicio de sesión de tu institución...
             </p>
           </div>
         ) : (
@@ -131,8 +147,8 @@ export default function SetupPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-              style={{ backgroundColor: "var(--color-primary, #007bff)" }}
+              className="w-full text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              style={{ backgroundColor: "var(--color-primary, #4F46E5)" }}
             >
               {loading ? "Activar cuenta..." : "Activar y Continuar"}
             </button>

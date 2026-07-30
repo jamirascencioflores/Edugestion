@@ -26,7 +26,7 @@ public class ImportacionController {
     @PostMapping("/estructura")
     public ResponseEntity<?> importarEstructura(
             @RequestParam("file") MultipartFile file,
-            @RequestHeader(value = "X-Tenant-Id", required = false) Long colegioId) {
+            @RequestHeader(value = "X-Colegio-Id", required = false) Long colegioId) { // 👈 Sincronizado con el frontend
 
         if (!ExcelHelper.esFormatoExcel(file)) {
             return ResponseEntity.badRequest().body("Por favor, suba un archivo Excel válido (.xlsx).");
@@ -47,7 +47,7 @@ public class ImportacionController {
             headerStyle.setFont(font);
 
             Row headerRow = sheet.createRow(0);
-            String[] columnas = {"Nivel", "Grado", "Sección", "Curso"};
+            String[] columnas = {"Nivel", "Grado", "Sección", "Área Académica", "Curso"}; // 👈 Agregado aquí
 
             for (int i = 0; i < columnas.length; i++) {
                 Cell cell = headerRow.createCell(i);
@@ -56,10 +56,10 @@ public class ImportacionController {
             }
 
             Object[][] datosEjemplo = {
-                    {"SECUNDARIA", "1ro", "A", "Matemática"},
-                    {"SECUNDARIA", "1ro", "A", "Comunicación"},
-                    {"SECUNDARIA", "1ro", "B", "Matemática"},
-                    {"PRIMARIA", "6to", "A", "Ciencia y Tecnología"}
+                    {"SECUNDARIA", "1ro", "A", "Matemática", "Matemática 1"},
+                    {"SECUNDARIA", "1ro", "A", "Comunicación", "Lenguaje"},
+                    {"SECUNDARIA", "1ro", "B", "Ciencia y Tecnología", "Física"},
+                    {"PRIMARIA", "6to", "A", "Personal Social", "Historia"}
             };
 
             int rowNum = 1;
