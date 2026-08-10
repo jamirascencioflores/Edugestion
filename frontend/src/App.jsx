@@ -17,7 +17,7 @@ import Periodos from "./pages/Director/GestionAcademica/Periodos/Periodos";
 import GradosSecciones from "./pages/Director/GestionAcademica/GradosSecciones";
 import GestionCursos from "./pages/Director/GestionAcademica/Cursos";
 import MallaCurricular from "./pages/Director/GestionAcademica/MallaCurricular";
-import Estudiantes from "./pages/Director/GestionAcademica/Estudiantes/Index";
+import Estudiantes from "./pages/Director/GestionAcademica/Estudiantes/index";
 import Tarifarios from "./pages/Director/Finanzas/Tarifarios/index"; // <--- Nueva Importación
 import CajaIndex from "./pages/Director/Finanzas/Caja/index"; // Importación para Caja
 import RegistroCalificaciones from "./pages/Docentes/Calificaciones/RegistroCalificaciones";

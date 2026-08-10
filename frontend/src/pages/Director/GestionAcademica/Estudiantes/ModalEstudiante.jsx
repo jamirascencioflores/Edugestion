@@ -3,7 +3,6 @@ import { X, Save } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
-// Helper fuera del componente
 const obtenerDatosFormulario = (estudiante, hoy, anioActual) => {
   if (estudiante) {
     const fechaNacFormateada = estudiante.fechaNacimiento
@@ -48,7 +47,6 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
   const anioActual = useMemo(() => new Date().getFullYear(), []);
   const hoy = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-  // Control para reajustar el estado al cambiar la prop 'estudiante' sin usar useEffect
   const [prevEstudiante, setPrevEstudiante] = useState(estudiante);
 
   const [formData, setFormData] = useState(() =>
@@ -58,7 +56,6 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     obtenerDatosFormulario(estudiante, hoy, anioActual),
   );
 
-  // Sincronización patrón React oficial: durante el render si cambió el 'estudiante'
   if (estudiante !== prevEstudiante) {
     setPrevEstudiante(estudiante);
     const dataFormatted = obtenerDatosFormulario(estudiante, hoy, anioActual);
@@ -71,7 +68,6 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Cargar grados y secciones al montar
   useEffect(() => {
     let isMounted = true;
 
@@ -168,8 +164,8 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden my-8">
-        <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden my-8">
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {estudiante ? "Editar Estudiante" : "Nuevo Estudiante"}
           </h2>
@@ -181,38 +177,38 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Nombres
               </label>
               <input
                 type="text"
                 name="nombres"
                 required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
                 value={formData.nombres}
                 onChange={handleChange}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Apellidos
               </label>
               <input
                 type="text"
                 name="apellidos"
                 required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
                 value={formData.apellidos}
                 onChange={handleChange}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 DNI
               </label>
               <input
@@ -220,43 +216,42 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
                 name="dni"
                 required
                 maxLength="15"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
                 value={formData.dni}
                 onChange={handleChange}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Fecha de Nacimiento
               </label>
               <input
                 type="date"
                 name="fechaNacimiento"
                 required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none scheme-light dark:scheme-dark"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm scheme-light dark:scheme-dark"
                 value={formData.fechaNacimiento}
                 onChange={handleChange}
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Email Institucional (Opcional)
               </label>
               <input
                 type="email"
                 name="emailInstitucional"
                 placeholder="ejemplo@colegio.edu.pe"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
                 value={formData.emailInstitucional}
                 onChange={handleChange}
               />
             </div>
 
-            {/* Selector de Año Escolar */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Año de Matrícula
               </label>
               <input
@@ -265,33 +260,32 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
                 required
                 min="2020"
                 max="2100"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
                 value={formData.anioEscolar}
                 onChange={handleChange}
               />
             </div>
 
-            {/* Fecha de Inscripción */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Fecha de Inscripción
               </label>
               <input
                 type="date"
                 name="fechaInscripcion"
                 required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none scheme-light dark:scheme-dark"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm scheme-light dark:scheme-dark"
                 value={formData.fechaInscripcion}
                 onChange={handleChange}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Grado
               </label>
               <select
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
                 value={gradoSeleccionado}
                 onChange={handleGradoChange}
               >
@@ -305,21 +299,21 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Sección
               </label>
               <select
                 name="seccionId"
                 required
                 disabled={!gradoSeleccionado}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                 value={formData.seccionId}
                 onChange={handleChange}
               >
                 <option value="">Seleccione una sección...</option>
                 {seccionesFiltradas.map((sec) => (
                   <option key={sec.id} value={sec.id}>
-                    {sec.nombre}
+                    Sección {sec.nombre}
                   </option>
                 ))}
               </select>
@@ -330,7 +324,7 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium"
             >
               Cancelar
             </button>
@@ -338,7 +332,7 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
               type="submit"
               disabled={loading}
               style={{ backgroundColor: "var(--color-primary)" }}
-              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm"
+              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm text-sm font-semibold"
             >
               <Save size={18} />
               {loading ? "Guardando..." : "Guardar"}

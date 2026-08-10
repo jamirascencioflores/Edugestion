@@ -3,13 +3,21 @@ import { toast } from "sonner";
 import Swal from "sweetalert2";
 import api from "../../../../api/axiosConfig";
 
-export default function TablaEstudiantes({ estudiantes, onRefresh, onEdit }) {
+export default function TablaEstudiantes({
+  estudiantes,
+  secciones = [],
+  grados = [],
+  onRefresh,
+  onEdit,
+}) {
   const handleCambiarEstado = async (estudiante) => {
     const accion = estudiante.estado ? "desactivar" : "activar";
 
     const result = await Swal.fire({
       title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} este Estudiante?`,
-      html: `El estudiante <b>${estudiante.nombres} ${estudiante.apellidos}</b> pasará a estado ${estudiante.estado ? "inactivo" : "activo"}.`,
+      html: `El estudiante <b>${estudiante.nombres} ${estudiante.apellidos}</b> pasará a estado ${
+        estudiante.estado ? "inactivo" : "activo"
+      }.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: estudiante.estado ? "#f59e0b" : "#10b981",
@@ -20,13 +28,14 @@ export default function TablaEstudiantes({ estudiantes, onRefresh, onEdit }) {
 
     if (result.isConfirmed) {
       try {
-        // Hacemos el PUT enviando todo el objeto, pero invirtiendo el estado
         await api.put(`/academicos/estudiantes/${estudiante.id}`, {
           ...estudiante,
           estado: !estudiante.estado,
         });
         toast.success(
-          `Estudiante ${estudiante.estado ? "desactivado" : "activado"} correctamente`,
+          `Estudiante ${
+            estudiante.estado ? "desactivado" : "activado"
+          } correctamente`,
         );
         onRefresh();
       } catch {
@@ -62,91 +71,172 @@ export default function TablaEstudiantes({ estudiantes, onRefresh, onEdit }) {
 
   if (!estudiantes || estudiantes.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
-        No hay estudiantes registrados. Haz clic en "Nuevo Estudiante" para
-        comenzar.
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
+        No hay estudiantes registrados con los criterios seleccionados.
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-x-auto border border-slate-200 dark:border-slate-700">
-      <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
-        <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
-          <tr>
-            <th className="px-6 py-4 font-medium">DNI</th>
-            <th className="px-6 py-4 font-medium">Estudiante</th>
-            <th className="px-6 py-4 font-medium">F. Nacimiento</th>
-            <th className="px-6 py-4 font-medium">Estado</th>
-            <th className="px-6 py-4 font-medium text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-          {estudiantes.map((e) => (
-            <tr
-              key={e.id}
-              className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-            >
-              <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                {e.dni}
-              </td>
-              <td className="px-6 py-4">
-                <div className="font-medium text-slate-900 dark:text-white">
-                  {e.nombres} {e.apellidos}
-                </div>
-                {e.emailInstitucional && (
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    {e.emailInstitucional}
-                  </div>
-                )}
-              </td>
-              <td className="px-6 py-4">
-                {new Date(e.fechaNacimiento).toLocaleDateString()}
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    e.estado
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
+            <tr>
+              <th className="px-6 py-4">Estudiante</th>
+              <th className="px-6 py-4">Grado y Sección</th>
+              <th className="px-6 py-4">F. Nacimiento</th>
+              <th className="px-6 py-4">Estado</th>
+              <th className="px-6 py-4 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            {estudiantes.map((e) => {
+              const iniciales = `${e.nombres?.[0] || ""}${
+                e.apellidos?.[0] || ""
+              }`.toUpperCase();
+
+              // Búsqueda con Number(...) para prevenir errores string vs number
+              const idSeccionTarget = Number(e.seccionId || e.seccion?.id);
+              const seccionAsignada = secciones.find(
+                (s) => Number(s.id) === idSeccionTarget,
+              );
+
+              const idGradoOrigen = Number(
+                seccionAsignada?.gradoId || seccionAsignada?.grado?.id,
+              );
+
+              const gradoAsignado = grados.find(
+                (g) => Number(g.id) === idGradoOrigen,
+              );
+
+              const etiquetaUbicacion =
+                gradoAsignado && seccionAsignada
+                  ? `${gradoAsignado.nombre} - "${seccionAsignada.nombre}"`
+                  : seccionAsignada
+                    ? `Sección ${seccionAsignada.nombre}`
+                    : "Sin Asignar";
+
+              return (
+                <tr
+                  key={e.id}
+                  className={`transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/60 ${
+                    !e.estado
+                      ? "opacity-75 bg-slate-50/40 dark:bg-slate-900/20"
+                      : ""
                   }`}
                 >
-                  {e.estado ? "Matriculado" : "Retirado"}
-                </span>
-              </td>
-              <td className="px-6 py-4 flex justify-end gap-3">
-                <button
-                  onClick={() => handleCambiarEstado(e)}
-                  className={`${
-                    e.estado
-                      ? "text-amber-500 hover:text-amber-700"
-                      : "text-emerald-500 hover:text-emerald-700"
-                  } transition-colors`}
-                  title={e.estado ? "Retirar/Desactivar" : "Matricular/Activar"}
-                >
-                  <Power size={18} />
-                </button>
-                <button
-                  onClick={() => onEdit(e)}
-                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                  title="Editar"
-                >
-                  <Edit size={18} />
-                </button>
-                {!e.estado && (
-                  <button
-                    onClick={() => handleEliminar(e)}
-                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                    title="Eliminar"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {/* Estudiante Info + Avatar */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs border ${
+                          e.estado
+                            ? "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600"
+                        }`}
+                      >
+                        {iniciales}
+                      </div>
+                      <div>
+                        <p
+                          className={`font-bold ${
+                            e.estado
+                              ? "text-slate-800 dark:text-slate-100"
+                              : "text-slate-500 dark:text-slate-400 line-through"
+                          }`}
+                        >
+                          {e.nombres} {e.apellidos}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          DNI: {e.dni}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Grado y Sección */}
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                        etiquetaUbicacion === "Sin Asignar"
+                          ? "bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400"
+                          : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60"
+                      }`}
+                    >
+                      {etiquetaUbicacion}
+                    </span>
+                  </td>
+
+                  {/* F. Nacimiento */}
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                    {e.fechaNacimiento
+                      ? new Date(e.fechaNacimiento).toLocaleDateString()
+                      : "N/A"}
+                  </td>
+
+                  {/* Estado */}
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        e.estado
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          e.estado ? "bg-emerald-500" : "bg-red-500"
+                        }`}
+                      />
+                      {e.estado ? "Matriculado" : "Retirado"}
+                    </span>
+                  </td>
+
+                  {/* Acciones */}
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center items-center gap-1">
+                      <button
+                        onClick={() => onEdit(e)}
+                        className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition-colors"
+                        title="Editar Estudiante"
+                      >
+                        <Edit size={16} />
+                      </button>
+
+                      <button
+                        onClick={() => handleCambiarEstado(e)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          e.estado
+                            ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                            : "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                        }`}
+                        title={
+                          e.estado
+                            ? "Retirar / Desactivar"
+                            : "Matricular / Activar"
+                        }
+                      >
+                        <Power size={16} />
+                      </button>
+
+                      {!e.estado && (
+                        <button
+                          onClick={() => handleEliminar(e)}
+                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors"
+                          title="Eliminar Definitivamente"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
