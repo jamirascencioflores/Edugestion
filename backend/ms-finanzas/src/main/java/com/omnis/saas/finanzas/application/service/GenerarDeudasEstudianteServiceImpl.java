@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,52 +21,80 @@ public class GenerarDeudasEstudianteServiceImpl implements GenerarDeudasEstudian
     private final TarifarioRepositoryPort tarifarioRepositoryPort;
     private final DeudaJpaRepository deudaJpaRepository;
 
+    private static final String[] MESES = {
+            "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    };
+
     @Override
     @Transactional
     public void generarPensionesAnuales(Long colegioId, Long estudianteId, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) {
-        boolean yaTieneDeudas = !deudaJpaRepository.findByColegioIdAndEstudianteId(colegioId, estudianteId).isEmpty();
-        if (yaTieneDeudas) return;
+        // 1. Obtener todas las deudas existentes del alumno para no duplicar
+        List<DeudaEntity> deudasExistentes = deudaJpaRepository.findByColegioIdAndEstudianteId(colegioId, estudianteId);
 
-        // Buscar tarifa configurada para este grado y año
-        Tarifario tarifario = tarifarioRepositoryPort.findByColegioIdAndAnioEscolar(colegioId, anioEscolar).stream()
-                .filter(t -> t.getGradoId().equals(gradoId))
+        // 2. Cargar los tarifarios activos configurados para este grado y año
+        List<Tarifario> tarifarios = tarifarioRepositoryPort.findByColegioIdAndAnioEscolar(colegioId, anioEscolar)
+                .stream()
+                .filter(t -> t.getGradoId().equals(gradoId) && Boolean.TRUE.equals(t.getEstado()))
+                .toList();
+
+        Tarifario tarifaMatricula = tarifarios.stream()
+                .filter(t -> "MATRICULA".equalsIgnoreCase(t.getTipoTarifa()))
                 .findFirst()
                 .orElse(null);
 
-        BigDecimal montoMensual = (tarifario != null) ? tarifario.getMontoMensual() : new BigDecimal("350.00");
-        BigDecimal montoMatricula = new BigDecimal("200.00"); // Monto base para la matrícula
+        Tarifario tarifaPension = tarifarios.stream()
+                .filter(t -> "PENSION".equalsIgnoreCase(t.getTipoTarifa()))
+                .findFirst()
+                .orElse(null);
 
         List<DeudaEntity> deudasAGenerar = new ArrayList<>();
 
-        // 1. Generar Concepto de Matrícula
-        LocalDate fechaVencMatricula = (fechaInscripcion != null) ? fechaInscripcion : LocalDate.now();
-        DeudaEntity deudaMatricula = DeudaEntity.builder()
-                .colegioId(colegioId)
-                .estudianteId(estudianteId)
-                .concepto("Matrícula " + anioEscolar)
-                .monto(montoMatricula)
-                .fechaVencimiento(fechaVencMatricula)
-                .estado(EstadoDeuda.PENDIENTE)
-                .build();
-        deudasAGenerar.add(deudaMatricula);
+        // 3. Evaluar y generar MATRÍCULA (si está configurada y el alumno aún no la tiene)
+        if (tarifaMatricula != null) {
+            boolean yaExisteMatricula = deudasExistentes.stream()
+                    .anyMatch(d -> d.getConcepto() != null && d.getConcepto().toLowerCase().contains("matrícula"));
 
-        // 2. Generar las 10 Pensiones Mensuales (Marzo a Diciembre)
-        String[] meses = {"Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
-
-        for (int i = 0; i < meses.length; i++) {
-            int mesNum = i + 3;
-            DeudaEntity deuda = DeudaEntity.builder()
-                    .colegioId(colegioId)
-                    .estudianteId(estudianteId)
-                    .concepto("Pensión " + meses[i] + " - " + anioEscolar)
-                    .monto(montoMensual)
-                    .fechaVencimiento(LocalDate.of(anioEscolar, mesNum, 5))
-                    .estado(EstadoDeuda.PENDIENTE)
-                    .build();
-
-            deudasAGenerar.add(deuda);
+            if (!yaExisteMatricula) {
+                LocalDate fechaVencMatricula = (fechaInscripcion != null) ? fechaInscripcion : LocalDate.now();
+                DeudaEntity deudaMatricula = DeudaEntity.builder()
+                        .colegioId(colegioId)
+                        .estudianteId(estudianteId)
+                        .concepto("Matrícula " + anioEscolar)
+                        .monto(tarifaMatricula.getMontoMensual())
+                        .fechaVencimiento(fechaVencMatricula)
+                        .estado(EstadoDeuda.PENDIENTE)
+                        .build();
+                deudasAGenerar.add(deudaMatricula);
+            }
         }
 
-        deudaJpaRepository.saveAll(deudasAGenerar);
+        // 4. Evaluar y generar PENSIONES MENSUALES (si están configuradas)
+        if (tarifaPension != null) {
+            for (int i = 0; i < MESES.length; i++) {
+                String conceptoPension = "Pensión " + MESES[i] + " - " + anioEscolar;
+                int mesNum = i + 3; // Marzo es mes 3
+
+                boolean yaExistePension = deudasExistentes.stream()
+                        .anyMatch(d -> d.getConcepto() != null && d.getConcepto().equalsIgnoreCase(conceptoPension));
+
+                if (!yaExistePension) {
+                    DeudaEntity deuda = DeudaEntity.builder()
+                            .colegioId(colegioId)
+                            .estudianteId(estudianteId)
+                            .concepto(conceptoPension)
+                            .monto(tarifaPension.getMontoMensual())
+                            .fechaVencimiento(LocalDate.of(anioEscolar, mesNum, 5))
+                            .estado(EstadoDeuda.PENDIENTE)
+                            .build();
+
+                    deudasAGenerar.add(deuda);
+                }
+            }
+        }
+
+        // 5. Guardar únicamente los nuevos conceptos faltantes
+        if (!deudasAGenerar.isEmpty()) {
+            deudaJpaRepository.saveAll(deudasAGenerar);
+        }
     }
 }

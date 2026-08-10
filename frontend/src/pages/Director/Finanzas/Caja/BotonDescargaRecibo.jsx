@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { FileDown, Loader2 } from "lucide-react";
-import api from "../../../../api/axiosConfig"; // Usa tu instancia configurada de Axios
+import { Download, Loader2 } from "lucide-react";
+import api from "../../../../api/axiosConfig";
 
 const BotonDescargaRecibo = ({ deudaId }) => {
   const [cargando, setCargando] = useState(false);
@@ -8,7 +8,6 @@ const BotonDescargaRecibo = ({ deudaId }) => {
   const handleDescargar = async () => {
     setCargando(true);
     try {
-      // Hacemos la petición con responseType: 'blob' directamente
       const response = await api.get(`/finanzas/reportes/recibo/${deudaId}`, {
         responseType: "blob",
       });
@@ -34,14 +33,13 @@ const BotonDescargaRecibo = ({ deudaId }) => {
       onClick={handleDescargar}
       disabled={cargando}
       title="Descargar Recibo PDF"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 active:scale-95"
+      className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-all shadow-sm disabled:opacity-50 active:scale-95"
     >
       {cargando ? (
-        <Loader2 size={14} className="animate-spin" />
+        <Loader2 size={16} className="animate-spin" />
       ) : (
-        <FileDown size={14} />
+        <Download size={16} />
       )}
-      Recibo
     </button>
   );
 };

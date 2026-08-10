@@ -2,8 +2,9 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
-              name="ReciboPago" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6e">
+              name="ReciboPago" pageWidth="595" pageHeight="420" orientation="Landscape" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="25" bottomMargin="25" uuid="a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6e">
 
+    <!-- Parámetros del Sistema -->
     <parameter name="NUMERO_RECIBO" class="java.lang.String"/>
     <parameter name="ESTUDIANTE_NOMBRE" class="java.lang.String"/>
     <parameter name="FECHA_PAGO" class="java.lang.String"/>
@@ -11,46 +12,146 @@
     <parameter name="MONTO_TOTAL" class="java.lang.String"/>
 
     <title>
-        <band height="60">
-            <textField>
-                <reportElement x="0" y="0" width="555" height="30" uuid="11112222-3333-4444-5555-666677778888"/>
-                <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font size="18" isBold="true"/>
+        <band height="70">
+            <!-- Banner Superior Header sin bordes -->
+            <rectangle radius="8">
+                <reportElement x="0" y="0" width="535" height="55" backcolor="#6D28D9" uuid="f1e2d3c4-b5a6-9788-1122-334455667788"/>
+            </rectangle>
+
+            <staticText>
+                <reportElement x="20" y="10" width="300" height="22" forecolor="#FFFFFF" uuid="11112222-3333-4444-5555-666677778888"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="16" isBold="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA["Recibo de Pago - EduGestión"]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="0" y="30" width="555" height="20" uuid="22223333-4444-5555-6666-777788889999"/>
-                <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font size="12" isBold="true"/>
+                <text><![CDATA[EduGestión • Comprobante de Pago]]></text>
+            </staticText>
+
+            <staticText>
+                <reportElement x="20" y="32" width="300" height="15" forecolor="#E9D5FF" uuid="a8b7c6d5-e4f3-2109-8877-665544332211"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9"/>
                 </textElement>
-                <textFieldExpression><![CDATA["N°: " + $P{NUMERO_RECIBO}]]></textFieldExpression>
+                <text><![CDATA[Sistema Integrado de Gestión Educativa]]></text>
+            </staticText>
+
+            <!-- Badge Número de Recibo sin bordes -->
+            <rectangle radius="6">
+                <reportElement x="355" y="12" width="160" height="30" backcolor="#FFFFFF" uuid="22223333-4444-5555-6666-777788889999"/>
+            </rectangle>
+
+            <textField>
+                <reportElement x="355" y="12" width="160" height="30" forecolor="#6D28D9" uuid="33334444-5555-6666-7777-888899990000"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="10" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["N° RECIBO: " + $P{NUMERO_RECIBO}]]></textFieldExpression>
             </textField>
         </band>
     </title>
 
     <detail>
-        <band height="120">
+        <band height="280">
+            <!-- Tarjeta de Detalles Principal con Borde Válido (Solid) -->
+            <rectangle radius="10">
+                <reportElement x="0" y="5" width="535" height="185" backcolor="#F8FAFC" uuid="44445555-6666-7777-8888-999900001111"/>
+                <graphicElement>
+                    <pen lineWidth="1" lineStyle="Solid" lineColor="#E2E8F0"/>
+                </graphicElement>
+            </rectangle>
+
+            <!-- Fila 1: Estudiante -->
+            <staticText>
+                <reportElement x="20" y="20" width="120" height="15" forecolor="#64748B" uuid="55556666-7777-8888-9999-000011112222"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[ESTUDIANTE]]></text>
+            </staticText>
             <textField>
-                <reportElement x="20" y="10" width="500" height="20" uuid="33334444-5555-6666-7777-888899990000"/>
-                <textElement><font size="12"/></textElement>
-                <textFieldExpression><![CDATA["Estudiante: " + $P{ESTUDIANTE_NOMBRE}]]></textFieldExpression>
+                <reportElement x="20" y="37" width="310" height="20" forecolor="#0F172A" uuid="66667777-8888-9999-0000-111122223333"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="12" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{ESTUDIANTE_NOMBRE}]]></textFieldExpression>
             </textField>
+
+            <!-- Fila 1 Derecha: Fecha -->
+            <staticText>
+                <reportElement x="350" y="20" width="160" height="15" forecolor="#64748B" uuid="77778888-9999-0000-1111-222233334444"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[FECHA DE PROCESO]]></text>
+            </staticText>
             <textField>
-                <reportElement x="20" y="40" width="500" height="20" uuid="44445555-6666-7777-8888-999900001111"/>
-                <textElement><font size="12"/></textElement>
-                <textFieldExpression><![CDATA["Fecha de Pago: " + $P{FECHA_PAGO}]]></textFieldExpression>
+                <reportElement x="350" y="37" width="160" height="20" forecolor="#334155" uuid="88889999-0000-1111-2222-333344445555"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="11" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{FECHA_PAGO}]]></textFieldExpression>
             </textField>
+
+            <!-- Línea Separadora Interna -->
+            <line>
+                <reportElement x="20" y="68" width="495" height="1" forecolor="#E2E8F0" uuid="99990000-1111-2222-3333-444455556666"/>
+            </line>
+
+            <!-- Fila 2: Concepto de Pago -->
+            <staticText>
+                <reportElement x="20" y="78" width="120" height="15" forecolor="#64748B" uuid="00001111-2222-3333-4444-555566667777"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[CONCEPTO]]></text>
+            </staticText>
             <textField>
-                <reportElement x="20" y="70" width="500" height="20" uuid="55556666-7777-8888-9999-000011112222"/>
-                <textElement><font size="12"/></textElement>
-                <textFieldExpression><![CDATA["Concepto: " + $P{CONCEPTO}]]></textFieldExpression>
+                <reportElement x="20" y="95" width="490" height="20" forecolor="#1E293B" uuid="11223344-5566-7788-9900-aabbccddeeff"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="11"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{CONCEPTO}]]></textFieldExpression>
             </textField>
+
+            <!-- Bloque Destacado de Monto Pagado -->
+            <rectangle radius="8">
+                <reportElement x="20" y="128" width="495" height="50" backcolor="#ECFDF5" uuid="22334455-6677-8899-00aa-bbccddeeff00"/>
+                <graphicElement>
+                    <pen lineWidth="1" lineStyle="Solid" lineColor="#A7F3D0"/>
+                </graphicElement>
+            </rectangle>
+
+            <staticText>
+                <reportElement x="35" y="143" width="150" height="20" forecolor="#047857" uuid="33445566-7788-9900-aabb-ccddeeff0011"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="12" isBold="true"/>
+                </textElement>
+                <text><![CDATA[ESTADO: PAGADO]]></text>
+            </staticText>
+
             <textField>
-                <reportElement x="20" y="100" width="500" height="20" uuid="66667777-8888-9999-0000-111122223333"/>
-                <textElement><font size="12" isBold="true"/></textElement>
-                <textFieldExpression><![CDATA["Monto Total: " + $P{MONTO_TOTAL}]]></textFieldExpression>
+                <reportElement x="280" y="135" width="220" height="35" forecolor="#065F46" uuid="44556677-8899-00aa-bbcc-ddeeff001122"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["TOTAL: " + $P{MONTO_TOTAL}]]></textFieldExpression>
             </textField>
+
+            <!-- Nota y Pie de Página -->
+            <staticText>
+                <reportElement x="0" y="210" width="535" height="15" forecolor="#94A3B8" uuid="55667788-9900-aabb-ccdd-eeff00112233"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="8"/>
+                </textElement>
+                <text><![CDATA[Este documento sirve como comprobante oficial de pago digital generado por la plataforma EduGestión.]]></text>
+            </staticText>
+
+            <staticText>
+                <reportElement x="0" y="225" width="535" height="15" forecolor="#CBD5E1" uuid="66778899-00aa-bbcc-ddee-ff0011223344"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="8" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Conserve este recibo para cualquier trámite o verificación futura.]]></text>
+            </staticText>
         </band>
     </detail>
 

@@ -27,6 +27,11 @@ public class SeccionController {
         return ResponseEntity.ok(service.listar());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarPorId(id));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody SeccionActualizarDTO dto) {
         Long colegioId = TenantContext.getColegioId();

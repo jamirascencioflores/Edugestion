@@ -34,7 +34,6 @@ public class SeccionPersistenceAdapter implements SeccionRepositoryPort {
 
     @Override
     public List<Seccion> findAll() {
-        // 👇 Método actualizado
         return repository.findAllByOrderByGrado_IdAscNombreAsc().stream()
                 .map(mapper::toDomain).toList();
     }

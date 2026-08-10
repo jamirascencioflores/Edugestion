@@ -69,4 +69,10 @@ public class SeccionServiceImpl implements SeccionUseCase {
 
         seccionRepositoryPort.deleteById(id);
     }
+
+    @Override
+    public Seccion buscarPorId(Long id) {
+        return seccionRepositoryPort.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sección no encontrada con id: " + id));
+    }
 }

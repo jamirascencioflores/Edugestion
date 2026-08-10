@@ -70,4 +70,9 @@ public class EstudianteController {
 
         return ResponseEntity.ok(ids);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarPorId(id));
+    }
 }
