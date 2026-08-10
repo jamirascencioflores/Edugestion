@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Wallet, Search } from "lucide-react";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 import api from "../../../../api/axiosConfig";
@@ -11,15 +11,14 @@ export default function TarifariosIndex() {
   const [tarifarios, setTarifarios] = useState([]);
   const [grados, setGrados] = useState([]);
 
-  // Estados para los filtros
+  // Filtros
   const [filtroAnio, setFiltroAnio] = useState(anioActual);
-  const [filtroTipo, setFiltroTipo] = useState("TODOS"); // <- NUEVO ESTADO
+  const [filtroTexto, setFiltroTexto] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tarifarioEditar, setTarifarioEditar] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Envolvemos fetchData en useCallback para estabilizar su referencia
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -34,12 +33,33 @@ export default function TarifariosIndex() {
     } finally {
       setLoading(false);
     }
-  }, [filtroAnio]); // Se recalcula cuando cambia filtroAnio
+  }, [filtroAnio]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+    let isMounted = true;
+    const loadAsyncData = async () => {
+      try {
+        setLoading(true);
+        const [gradosRes, tarifariosRes] = await Promise.all([
+          api.get("/academicos/grados"),
+          api.get(`/finanzas/tarifarios/anio/${filtroAnio}`),
+        ]);
+        if (isMounted) {
+          setGrados(gradosRes.data);
+          setTarifarios(tarifariosRes.data);
+        }
+      } catch {
+        if (isMounted) toast.error("Error al cargar los tarifarios");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadAsyncData();
+    return () => {
+      isMounted = false;
+    };
+  }, [filtroAnio]);
 
   const handleAbrirModal = (tarifario = null) => {
     setTarifarioEditar(tarifario);
@@ -76,24 +96,21 @@ export default function TarifariosIndex() {
     }
   };
 
-  // NUEVO: Lógica de filtrado en memoria
+  // Filtrado por buscador de texto
   const tarifariosFiltrados = tarifarios.filter((t) => {
-    if (filtroTipo === "TODOS") return true;
-    return t.tipoTarifa === filtroTipo;
+    const gradoObj = grados.find((g) => String(g.id) === String(t.gradoId));
+    const nombreGrado = gradoObj ? gradoObj.nombre.toLowerCase() : "";
+    return nombreGrado.includes(filtroTexto.toLowerCase());
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1
-            className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2"
-            style={{ color: "var(--color-primary)" }}
-          >
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <Wallet size={24} style={{ color: "var(--color-primary)" }} />
-            <span className="text-slate-800 dark:text-white">
-              Tarifario de Pensiones
-            </span>
+            <span>Tarifario de Pensiones</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Configura el costo mensual de la pensión y matrícula por cada grado.
@@ -102,51 +119,57 @@ export default function TarifariosIndex() {
         <button
           onClick={() => handleAbrirModal()}
           style={{ backgroundColor: "var(--color-primary)" }}
-          className="text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:opacity-90 shadow-sm"
+          className="text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all hover:opacity-90 shadow-sm text-sm font-semibold"
         >
-          <Plus size={20} />
+          <Plus size={18} />
           <span>Nueva Tarifa</span>
         </button>
       </div>
 
-      {/* NUEVO: Contenedor con múltiples filtros */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-6">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Año Escolar:
-          </label>
-          <input
-            type="number"
-            className="px-4 py-2 w-32 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
-            value={filtroAnio}
-            onChange={(e) => setFiltroAnio(e.target.value)}
-          />
-        </div>
+      {/* Barra de Filtros Compacta */}
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          {/* Buscador de Grado */}
+          <div className="relative flex-1 md:w-72">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Buscar por grado escolar..."
+              value={filtroTexto}
+              onChange={(e) => setFiltroTexto(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+            />
+          </div>
 
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Tipo de Tarifa:
-          </label>
-          <select
-            className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
-            value={filtroTipo}
-            onChange={(e) => setFiltroTipo(e.target.value)}
-          >
-            <option value="TODOS">Todos</option>
-            <option value="MATRICULA">Matrícula</option>
-            <option value="PENSION">Pensión</option>
-          </select>
+          {/* Año Escolar */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+              Año Escolar:
+            </label>
+            <input
+              type="number"
+              className="px-3 py-2 w-28 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none text-sm font-semibold text-center"
+              value={filtroAnio}
+              onChange={(e) => setFiltroAnio(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Tabla Unificada */}
       <TablaTarifario
-        tarifarios={tarifariosFiltrados} // <- Pasamos el arreglo ya filtrado
+        tarifarios={tarifariosFiltrados}
         grados={grados}
         loading={loading}
         onEdit={handleAbrirModal}
         onToggleStatus={handleCambiarEstado}
+        onRefresh={fetchData}
       />
 
+      {/* Modal */}
       {isModalOpen && (
         <ModalTarifario
           onClose={() => {

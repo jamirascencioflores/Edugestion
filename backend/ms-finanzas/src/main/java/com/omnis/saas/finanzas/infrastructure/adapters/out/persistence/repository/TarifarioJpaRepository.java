@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface TarifarioJpaRepository extends JpaRepository<TarifarioEntity, Long> {
     Optional<TarifarioEntity> findByIdAndColegioId(Long id, Long colegioId);
     List<TarifarioEntity> findByColegioIdAndAnioEscolar(Long colegioId, Integer anioEscolar);
+    void deleteByIdAndColegioId(Long id, Long colegioId);
 }

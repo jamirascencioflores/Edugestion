@@ -8,4 +8,5 @@ public interface TarifarioRepositoryPort {
     Tarifario save(Tarifario tarifario);
     Optional<Tarifario> findByIdAndColegioId(Long id, Long colegioId);
     List<Tarifario> findByColegioIdAndAnioEscolar(Long colegioId, Integer anioEscolar);
+    void deleteByIdAndColegioId(Long id, Long colegioId);
 }

@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
@@ -25,22 +26,25 @@ public class TarifarioServiceImpl implements TarifarioUseCase {
     private final RestTemplate restTemplate;
 
     @Override
+    @Transactional
     public Tarifario crearTarifario(Tarifario tarifario) {
         tarifario.setEstado(true);
         Tarifario guardado = repositoryPort.save(tarifario);
 
-        // 👈 Sincronización retroactiva: busca alumnos ya matriculados en este grado y les genera sus pensiones
+        // Sincronización retroactiva
         sincronizarDeudasRetroactivas(guardado.getColegioId(), guardado.getGradoId(), guardado.getAnioEscolar());
 
         return guardado;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Tarifario> obtenerPorAnio(Long colegioId, Integer anioEscolar) {
         return repositoryPort.findByColegioIdAndAnioEscolar(colegioId, anioEscolar);
     }
 
     @Override
+    @Transactional
     public Tarifario actualizarTarifario(Long id, Long colegioId, Tarifario tarifarioActualizado) {
         Tarifario existente = repositoryPort.findByIdAndColegioId(id, colegioId)
                 .orElseThrow(() -> new RuntimeException("Tarifario no encontrado"));
@@ -52,13 +56,13 @@ public class TarifarioServiceImpl implements TarifarioUseCase {
 
         Tarifario guardado = repositoryPort.save(existente);
 
-        // 👈 Si actualizó el monto de la tarifa, sincroniza a los alumnos pendientes del grado
         sincronizarDeudasRetroactivas(colegioId, guardado.getGradoId(), guardado.getAnioEscolar());
 
         return guardado;
     }
 
     @Override
+    @Transactional
     public void cambiarEstado(Long id, Long colegioId, Boolean estado) {
         Tarifario existente = repositoryPort.findByIdAndColegioId(id, colegioId)
                 .orElseThrow(() -> new RuntimeException("Tarifario no encontrado"));
@@ -67,14 +71,19 @@ public class TarifarioServiceImpl implements TarifarioUseCase {
         repositoryPort.save(existente);
     }
 
-    // 👈 Método auxiliar para consultar alumnos de ms-academico y generarles sus deudas
+    @Override
+    @Transactional
+    public void eliminarTarifario(Long id, Long colegioId) {
+        repositoryPort.deleteByIdAndColegioId(id, colegioId);
+    }
+
+    // Método auxiliar para consultar alumnos de ms-academico y generarles sus deudas
     private void sincronizarDeudasRetroactivas(Long colegioId, Long gradoId, Integer anioEscolar) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Colegio-Id", String.valueOf(colegioId));
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            // Consultar la lista de IDs de estudiantes matriculados en ese grado en ms-academico
             ResponseEntity<List<Long>> response = restTemplate.exchange(
                     "http://ms-academico/api/academicos/estudiantes/grado/" + gradoId + "/ids",
                     HttpMethod.GET,

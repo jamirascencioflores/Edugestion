@@ -31,4 +31,9 @@ public class TarifarioPersistenceAdapter implements TarifarioRepositoryPort {
         return repository.findByColegioIdAndAnioEscolar(colegioId, anioEscolar)
                 .stream().map(mapper::toDomain).toList();
     }
+
+    @Override
+    public void deleteByIdAndColegioId(Long id, Long colegioId) {
+        repository.deleteByIdAndColegioId(id, colegioId);
+    }
 }

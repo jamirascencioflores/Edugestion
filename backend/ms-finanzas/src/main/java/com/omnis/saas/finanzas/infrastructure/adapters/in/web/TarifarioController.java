@@ -55,4 +55,11 @@ public class TarifarioController {
         useCase.cambiarEstado(id, colegioId, estado);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@RequestHeader("X-Colegio-Id") Long colegioId,
+                                         @PathVariable Long id) {
+        useCase.eliminarTarifario(id, colegioId);
+        return ResponseEntity.noContent().build();
+    }
 }

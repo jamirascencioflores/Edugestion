@@ -10,12 +10,14 @@ export default function ModalTarifario({
 }) {
   const anioActual = new Date().getFullYear();
 
-  // Inicializamos el estado directamente con los props si existen
   const [formData, setFormData] = useState({
     gradoId: tarifarioEditar?.gradoId || "",
-    montoMensual: tarifarioEditar?.montoMensual || "",
-    anioEscolar: tarifarioEditar?.anioEscolar || anioActual,
-    tipoTarifa: tarifarioEditar?.tipoTarifa || "PENSION",
+    anioEscolar:
+      tarifarioEditar?.matricula?.anioEscolar ||
+      tarifarioEditar?.pension?.anioEscolar ||
+      anioActual,
+    montoMatricula: tarifarioEditar?.matricula?.montoMensual || "",
+    montoPension: tarifarioEditar?.pension?.montoMensual || "",
   });
 
   const [grados, setGrados] = useState([]);
@@ -35,15 +37,59 @@ export default function ModalTarifario({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.gradoId) {
+      toast.error("Seleccione un grado escolar");
+      return;
+    }
+
     setLoading(true);
     try {
-      if (tarifarioEditar) {
-        await api.put(`/finanzas/tarifarios/${tarifarioEditar.id}`, formData);
-        toast.success("Tarifario actualizado con éxito");
-      } else {
-        await api.post("/finanzas/tarifarios", formData);
-        toast.success("Tarifario configurado con éxito");
+      const peticiones = [];
+
+      // 1. Matrícula
+      if (formData.montoMatricula !== "") {
+        const payloadMatricula = {
+          gradoId: Number(formData.gradoId),
+          anioEscolar: Number(formData.anioEscolar),
+          montoMensual: Number(formData.montoMatricula),
+          tipoTarifa: "MATRICULA",
+        };
+
+        if (tarifarioEditar?.matricula) {
+          peticiones.push(
+            api.put(
+              `/finanzas/tarifarios/${tarifarioEditar.matricula.id}`,
+              payloadMatricula,
+            ),
+          );
+        } else {
+          peticiones.push(api.post("/finanzas/tarifarios", payloadMatricula));
+        }
       }
+
+      // 2. Pensión
+      if (formData.montoPension !== "") {
+        const payloadPension = {
+          gradoId: Number(formData.gradoId),
+          anioEscolar: Number(formData.anioEscolar),
+          montoMensual: Number(formData.montoPension),
+          tipoTarifa: "PENSION",
+        };
+
+        if (tarifarioEditar?.pension) {
+          peticiones.push(
+            api.put(
+              `/finanzas/tarifarios/${tarifarioEditar.pension.id}`,
+              payloadPension,
+            ),
+          );
+        } else {
+          peticiones.push(api.post("/finanzas/tarifarios", payloadPension));
+        }
+      }
+
+      await Promise.all(peticiones);
+      toast.success("Tarifas guardadas correctamente");
       onSuccess();
       onClose();
     } catch {
@@ -59,94 +105,98 @@ export default function ModalTarifario({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden">
-        <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            {tarifarioEditar ? "Editar Tarifa" : "Configurar Tarifa"}
+            {tarifarioEditar ? "Editar Tarifas" : "Configurar Tarifas"}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Año Escolar
               </label>
               <input
                 type="number"
                 name="anioEscolar"
                 required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none text-sm font-semibold"
                 value={formData.anioEscolar}
                 onChange={handleChange}
               />
             </div>
+
             <div className="w-1/2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Tipo
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Grado Escolar
               </label>
               <select
-                name="tipoTarifa"
+                name="gradoId"
                 required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
-                value={formData.tipoTarifa}
+                disabled={Boolean(tarifarioEditar)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-transparent text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500/50 outline-none text-sm font-medium disabled:opacity-50"
+                value={formData.gradoId}
                 onChange={handleChange}
               >
-                <option value="PENSION">Pensión</option>
-                <option value="MATRICULA">Matrícula</option>
+                <option value="">Seleccione...</option>
+                {grados.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.nombre}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Grado
-            </label>
-            <select
-              name="gradoId"
-              required
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
-              value={formData.gradoId}
-              onChange={handleChange}
-            >
-              <option value="">Seleccione un grado...</option>
-              {grados.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Monto (S/)
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Monto Matrícula (S/)
             </label>
             <input
               type="number"
               step="0.01"
               min="0"
-              name="montoMensual"
-              required
-              placeholder="Ej: 350.00"
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
-              value={formData.montoMensual}
+              name="montoMatricula"
+              placeholder="Ej: 200.00"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-transparent text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500/50 outline-none text-sm font-bold"
+              value={formData.montoMatricula}
               onChange={handleChange}
             />
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Monto Pensión Mensual (S/)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              name="montoPension"
+              placeholder="Ej: 350.00"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-transparent text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500/50 outline-none text-sm font-bold"
+              value={formData.montoPension}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium"
             >
               Cancelar
             </button>
@@ -154,9 +204,9 @@ export default function ModalTarifario({
               type="submit"
               disabled={loading}
               style={{ backgroundColor: "var(--color-primary)" }}
-              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50"
+              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm text-sm font-semibold"
             >
-              <Save size={18} />
+              <Save size={16} />
               {loading ? "Guardando..." : "Guardar"}
             </button>
           </div>
