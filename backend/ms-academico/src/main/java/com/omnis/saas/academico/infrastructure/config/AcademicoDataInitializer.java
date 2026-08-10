@@ -1,5 +1,6 @@
 package com.omnis.saas.academico.infrastructure.config;
 
+import com.omnis.saas.academico.domain.model.EstadoPeriodo;
 import com.omnis.saas.academico.infrastructure.adapters.out.persistence.entity.*;
 import com.omnis.saas.academico.infrastructure.adapters.out.persistence.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,8 @@ public class AcademicoDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        // Evitar duplicados si la base de datos ya tiene información
         if (periodoRepository.count() > 0) return;
 
-        // Simulamos que el SuperAdmin ya creó esto en ms-auth
         Long colegioId = 1L;
         String docenteId = "b0c6fded-7e1a-497f-a7db-2bee2275f322";
 
@@ -38,7 +37,7 @@ public class AcademicoDataInitializer implements CommandLineRunner {
                 .nombre("Bimestre 1")
                 .fechaInicio(LocalDate.now().minusDays(15))
                 .fechaFin(LocalDate.now().plusDays(45))
-                .estado(true)
+                .estado(EstadoPeriodo.ACTIVO) // 👈 Cambiado de true a EstadoPeriodo.ACTIVO
                 .build();
         periodoRepository.save(periodo);
 
@@ -51,7 +50,7 @@ public class AcademicoDataInitializer implements CommandLineRunner {
                 .build();
         grado = gradoRepository.save(grado);
 
-        // 3. Crear Sección (Ajusta .grado() a .gradoId(grado.getId()) si tu entidad usa el ID en lugar del objeto)
+        // 3. Crear Sección
         SeccionEntity seccion = SeccionEntity.builder()
                 .colegioId(colegioId)
                 .grado(grado)
@@ -61,11 +60,11 @@ public class AcademicoDataInitializer implements CommandLineRunner {
                 .build();
         seccion = seccionRepository.save(seccion);
 
-        // 3.5 Crear Área Académica y asignar al Docente como Coordinador
+        // 3.5 Crear Área Académica
         AreaAcademicaEntity areaCiencias = AreaAcademicaEntity.builder()
                 .colegioId(colegioId)
                 .nombre("Ciencias y Matemáticas")
-                .coordinadorId(docenteId) // ¡Nuestro docente ahora es coordinador de esta área!
+                .coordinadorId(docenteId)
                 .estado(true)
                 .build();
         areaCiencias = areaRepository.save(areaCiencias);
@@ -74,19 +73,19 @@ public class AcademicoDataInitializer implements CommandLineRunner {
         CursoEntity mate = CursoEntity.builder()
                 .colegioId(colegioId)
                 .nombre("Matemática")
-                .areaAcademica(areaCiencias) // <-- Asociado al área
+                .areaAcademica(areaCiencias)
                 .estado(true)
                 .build();
         CursoEntity comu = CursoEntity.builder()
                 .colegioId(colegioId)
                 .nombre("Comunicación")
-                .areaAcademica(areaCiencias) // <-- Asociado al área
+                .areaAcademica(areaCiencias)
                 .estado(true)
                 .build();
         mate = cursoRepository.save(mate);
         comu = cursoRepository.save(comu);
 
-        // 5. Crear Estudiantes (Ajusta .seccion() a .seccionId() si es necesario)
+        // 5. Crear Estudiantes
         EstudianteEntity est1 = EstudianteEntity.builder()
                 .colegioId(colegioId)
                 .seccion(seccion)
@@ -108,7 +107,7 @@ public class AcademicoDataInitializer implements CommandLineRunner {
                 .build();
         estudianteRepository.saveAll(List.of(est1, est2));
 
-        // 6. Asignar Docente a los cursos de esa sección
+        // 6. Asignar Docente
         AsignacionEntity asig1 = AsignacionEntity.builder()
                 .colegioId(colegioId)
                 .cursoId(mate.getId())

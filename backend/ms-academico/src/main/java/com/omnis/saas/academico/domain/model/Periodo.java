@@ -8,9 +8,9 @@ import java.time.LocalDate;
 @Builder
 public class Periodo {
     private Long id;
-    private String nombre; // Ej: "Año Escolar 2026"
+    private String nombre;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private Long colegioId;
-    private Boolean estado;
+    private EstadoPeriodo estado;
 }

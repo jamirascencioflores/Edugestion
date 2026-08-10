@@ -6,8 +6,9 @@ import java.util.Optional;
 
 public interface PeriodoRepositoryPort {
     Periodo guardar(Periodo periodo);
+    List<Periodo> guardarTodos(List<Periodo> periodos);
     List<Periodo> buscarTodos();
-
+    List<Periodo> buscarPorColegioId(Long colegioId);
     Optional<Periodo> buscarPorId(Long id);
     void eliminarPorId(Long id);
 }

@@ -1,32 +1,22 @@
-// pages/Director/GestionAcademica/Periodos/ModalPeriodo.jsx
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
 export default function ModalPeriodo({ isOpen, onClose, periodo, onSuccess }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    fechaInicio: "",
-    fechaFin: "",
-    estado: true,
-  });
-
-  useEffect(() => {
-    if (periodo) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData(periodo);
-    } else {
-      setFormData({ nombre: "", fechaInicio: "", fechaFin: "", estado: true });
-    }
-  }, [periodo, isOpen]);
+  // Inicializamos el estado directamente aprovechando el remonte por 'key' desde el padre
+  const [formData, setFormData] = useState(() => ({
+    nombre: periodo?.nombre || "",
+    fechaInicio: periodo?.fechaInicio || "",
+    fechaFin: periodo?.fechaFin || "",
+    estado: periodo?.estado || "PENDIENTE",
+  }));
 
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -39,8 +29,8 @@ export default function ModalPeriodo({ isOpen, onClose, periodo, onSuccess }) {
         await api.post("/academicos/periodos", formData);
         toast.success("Periodo creado correctamente");
       }
-      onSuccess(); // Recarga la tabla en el componente padre
-      onClose(); // Cierra el modal
+      onSuccess();
+      onClose();
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Error al guardar el periodo",
@@ -74,10 +64,11 @@ export default function ModalPeriodo({ isOpen, onClose, periodo, onSuccess }) {
               value={formData.nombre}
               onChange={handleChange}
               required
-              placeholder="Ej: Año Escolar 2026"
+              placeholder="Ej: Bimestre 1 - 2026"
               className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -106,22 +97,21 @@ export default function ModalPeriodo({ isOpen, onClose, periodo, onSuccess }) {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="estado"
-              name="estado"
-              checked={formData.estado}
-              onChange={handleChange}
-              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer focus:outline-none"
-              style={{ accentColor: "var(--color-primary)" }}
-            />
-            <label
-              htmlFor="estado"
-              className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
-            >
-              Periodo Activo
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Estado del Periodo
             </label>
+            <select
+              name="estado"
+              value={formData.estado}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="PENDIENTE">PENDIENTE</option>
+              <option value="ACTIVO">ACTIVO</option>
+              <option value="CERRADO">CERRADO</option>
+            </select>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700 mt-6">

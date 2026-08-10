@@ -1,10 +1,14 @@
 package com.omnis.saas.academico.infrastructure.adapters.out.persistence.entity;
 
+import com.omnis.saas.academico.domain.model.EstadoPeriodo;
 import com.omnis.saas.academico.domain.model.Periodo;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
+
 import java.time.LocalDate;
-import org.hibernate.annotations.*;
 
 @Entity
 @Table(name = "periodos")
@@ -31,10 +35,12 @@ public class PeriodoEntity {
     private LocalDate fechaFin;
 
     @Column(name = "colegio_id", nullable = false)
-    private Long colegioId; // <-- El pilar de tu multi-tenant aquí
+    private Long colegioId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
-    private Boolean estado = true;
+    private EstadoPeriodo estado = EstadoPeriodo.PENDIENTE;
 
     public Periodo toDomain() {
         return Periodo.builder()

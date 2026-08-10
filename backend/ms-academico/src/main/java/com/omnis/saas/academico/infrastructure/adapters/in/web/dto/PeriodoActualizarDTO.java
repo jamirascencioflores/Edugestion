@@ -1,15 +1,15 @@
 package com.omnis.saas.academico.infrastructure.adapters.in.web.dto;
 
+import com.omnis.saas.academico.domain.model.EstadoPeriodo;
 import com.omnis.saas.academico.domain.model.Periodo;
 
 import java.time.LocalDate;
-// Asegúrate de importar tu clase Periodo del dominio
 
 public record PeriodoActualizarDTO(
         String nombre,
         LocalDate fechaInicio,
         LocalDate fechaFin,
-        Boolean estado
+        EstadoPeriodo estado // 👈 Cambiado de Boolean a EstadoPeriodo
 ) {
     public Periodo toDomain(Long colegioId) {
         return Periodo.builder()

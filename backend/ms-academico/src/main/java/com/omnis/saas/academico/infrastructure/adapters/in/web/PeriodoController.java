@@ -2,6 +2,7 @@ package com.omnis.saas.academico.infrastructure.adapters.in.web;
 
 import com.omnis.saas.academico.domain.model.Periodo;
 import com.omnis.saas.academico.domain.ports.in.PeriodoUseCase;
+import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.GenerarPeriodosDTO;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.PeriodoActualizarDTO;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.PeriodoRegistroDTO;
 import com.omnis.saas.academico.infrastructure.config.tenant.TenantContext;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -55,5 +57,20 @@ public class PeriodoController {
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         periodoUseCase.eliminar(id);
         return ResponseEntity.noContent().build(); // Devuelve un 204
+    }
+
+    @PostMapping("/autogenerar")
+    public ResponseEntity<List<Periodo>> autogenerar(
+            @RequestHeader("X-Colegio-Id") Long colegioId,
+            @RequestBody GenerarPeriodosDTO dto) {
+        return ResponseEntity.ok(periodoUseCase.generarPeriodosAutomaticos(colegioId, dto));
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<Periodo> cambiarEstado(
+            @RequestHeader("X-Colegio-Id") Long colegioId,
+            @PathVariable Long id,
+            @RequestParam String estado) {
+        return ResponseEntity.ok(periodoUseCase.cambiarEstado(colegioId, id, estado));
     }
 }
