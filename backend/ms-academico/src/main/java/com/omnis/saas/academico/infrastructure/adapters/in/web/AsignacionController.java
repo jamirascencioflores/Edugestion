@@ -2,6 +2,7 @@ package com.omnis.saas.academico.infrastructure.adapters.in.web;
 
 import com.omnis.saas.academico.domain.ports.in.AsignacionUseCase;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.AsignacionActualizarDTO;
+import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.AsignacionClonarDTO;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.AsignacionRegistroDTO;
 import com.omnis.saas.academico.infrastructure.config.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +44,12 @@ public class AsignacionController {
     @GetMapping("/docente/{docenteId}")
     public ResponseEntity<?> listarPorDocente(@PathVariable String docenteId) {
         return ResponseEntity.ok(service.listarPorDocente(docenteId));
+    }
+
+    @PostMapping("/clonar")
+    public ResponseEntity<?> clonarMalla(@RequestBody AsignacionClonarDTO dto) {
+        Long colegioId = TenantContext.getColegioId();
+        service.clonarMalla(dto, colegioId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

@@ -1,28 +1,27 @@
-import { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { useState } from "react";
+import { X, Save, Lock } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
-export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    capacidadMaxima: 30,
-    gradoId: "",
-    estado: true,
-  });
+export default function ModalSeccion({
+  onClose,
+  onSuccess,
+  seccion,
+  grados,
+  gradoDefaultId,
+}) {
+  // Inicialización perezosa de formData
+  const [formData, setFormData] = useState(() => ({
+    nombre: seccion?.nombre || "",
+    capacidadMaxima: seccion?.capacidadMaxima || 30,
+    gradoId: seccion?.gradoId || seccion?.grado?.id || gradoDefaultId || "",
+    estado: seccion ? seccion.estado : true,
+  }));
+
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (seccion) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        nombre: seccion.nombre,
-        capacidadMaxima: seccion.capacidadMaxima,
-        gradoId: seccion.grado?.id || "",
-        estado: seccion.estado,
-      });
-    }
-  }, [seccion]);
+  // Determina si el selector de grado debe estar bloqueado
+  const isGradoBloqueado = Boolean(gradoDefaultId || seccion);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,8 +49,8 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
         <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {seccion ? "Editar Sección" : "Nueva Sección"}
@@ -65,6 +64,7 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Nombre de Sección */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Nombre (Ej: A, B, Única)
@@ -72,6 +72,7 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
             <input
               type="text"
               required
+              placeholder="Ej: A"
               className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               value={formData.nombre}
               onChange={(e) =>
@@ -80,13 +81,23 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
             />
           </div>
 
+          {/* Selector de Grado (Bloqueado si se añade desde tarjeta) */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Grado
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Grado Perteneciente
+              </label>
+              {isGradoBloqueado && (
+                <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                  <Lock size={12} /> Asignado por contexto
+                </span>
+              )}
+            </div>
+
             <select
               required
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              disabled={isGradoBloqueado}
+              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-700/60 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
               value={formData.gradoId}
               onChange={(e) =>
                 setFormData({ ...formData, gradoId: Number(e.target.value) })
@@ -101,6 +112,7 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
             </select>
           </div>
 
+          {/* Capacidad Máxima */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Capacidad Máxima
@@ -117,6 +129,7 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
             />
           </div>
 
+          {/* Checkbox Estado si es edición */}
           {seccion && (
             <div className="flex items-center gap-2 mt-4">
               <input
@@ -150,7 +163,7 @@ export default function ModalSeccion({ onClose, onSuccess, seccion, grados }) {
               type="submit"
               disabled={loading}
               style={{ backgroundColor: "var(--color-primary)" }}
-              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-colors hover:opacity-90 disabled:opacity-50 shadow-sm"
+              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-colors hover:opacity-90 disabled:opacity-50 shadow-sm font-medium"
             >
               <Save size={18} />
               {loading ? "Guardando..." : "Guardar"}

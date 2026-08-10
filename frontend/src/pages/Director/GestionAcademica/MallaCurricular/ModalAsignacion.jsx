@@ -10,7 +10,7 @@ export default function ModalAsignacion({
   cursos,
   docentes,
   asignacion,
-  asignaciones = [], // <-- Añadido para validar existencia
+  asignaciones = [],
 }) {
   const [formData, setFormData] = useState({
     id: asignacion?.id || null,
@@ -34,20 +34,16 @@ export default function ModalAsignacion({
 
     setLoading(true);
     try {
-      // 1. Buscamos si ya existe una asignación para este curso en la sección
       const asignacionExistente = asignaciones.find(
         (a) => a.cursoId === formData.cursoId,
       );
 
-      // Usamos el ID de la asignación existente (si se intentó crear uno duplicado) o el que viene por prop al editar
       const idActualizar = asignacionExistente?.id || formData.id;
 
       if (idActualizar) {
-        // 2. Si existe, actualizamos usando PUT
         await api.put(`/academicos/asignaciones/${idActualizar}`, formData);
         toast.success("Asignación actualizada con éxito");
       } else {
-        // 3. Si no existe, creamos con POST
         await api.post("/academicos/asignaciones", formData);
         toast.success("Curso asignado correctamente");
       }
@@ -62,15 +58,15 @@ export default function ModalAsignacion({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
         <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {asignacion ? "Editar Asignación" : "Asignar Curso"}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
             <X size={24} />
           </button>
@@ -84,7 +80,7 @@ export default function ModalAsignacion({
             <select
               required
               disabled={!!asignacion}
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-700"
+              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-700/50"
               value={formData.cursoId}
               onChange={(e) =>
                 setFormData({ ...formData, cursoId: Number(e.target.value) })
@@ -101,17 +97,17 @@ export default function ModalAsignacion({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Docente Dictante
+              Docente Dictante{" "}
+              <span className="text-xs text-slate-400">(Opcional)</span>
             </label>
             <select
-              required
               className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               value={formData.docenteId}
               onChange={(e) =>
                 setFormData({ ...formData, docenteId: e.target.value })
               }
             >
-              <option value="">-- Seleccione Docente --</option>
+              <option value="">-- Sin Docente Asignado --</option>
               {docentes.map((d) => (
                 <option key={d.id} value={d.usuarioId}>
                   {d.nombres} {d.apellidos}
@@ -132,7 +128,7 @@ export default function ModalAsignacion({
               type="submit"
               disabled={loading}
               style={{ backgroundColor: "var(--color-primary)" }}
-              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm"
+              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm font-medium"
             >
               <Save size={18} /> {loading ? "Guardando..." : "Guardar Cambios"}
             </button>

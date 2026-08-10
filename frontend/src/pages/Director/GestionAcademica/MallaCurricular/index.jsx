@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
-import { Plus, ArrowLeft, Network } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, ArrowLeft, Network, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import api from "../../../../api/axiosConfig";
 import ModalAsignacion from "./ModalAsignacion";
+import ModalClonarMalla from "./ModalClonarMalla";
 import TablaAsignaciones from "./TablaAsignaciones";
 
 export default function MallaCurricular() {
   const navigate = useNavigate();
   const [grados, setGrados] = useState([]);
   const [seccionesTotales, setSeccionesTotales] = useState([]);
-  const [seccionesFiltradas, setSeccionesFiltradas] = useState([]);
   const [cursos, setCursos] = useState([]);
   const [docentes, setDocentes] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
@@ -18,9 +18,31 @@ export default function MallaCurricular() {
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [seccionSeleccionada, setSeccionSeleccionada] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showModalClonar, setShowModalClonar] = useState(false);
   const [asignacionEdit, setAsignacionEdit] = useState(null);
 
-  // 1. Cargar catálogos iniciales
+  // 1. Estado derivado: Se calcula en cada render sin necesidad de setState dentro de useEffect
+  const seccionesFiltradas = gradoSeleccionado
+    ? seccionesTotales.filter((s) => s.gradoId === Number(gradoSeleccionado))
+    : [];
+
+  // Función para obtener asignacionesMemoizada
+  const fetchAsignaciones = useCallback(async (seccionId) => {
+    if (!seccionId) {
+      setAsignaciones([]);
+      return;
+    }
+    try {
+      const res = await api.get(
+        `/academicos/asignaciones/seccion/${seccionId}`,
+      );
+      setAsignaciones(res.data);
+    } catch {
+      toast.error("Error al cargar la malla curricular");
+    }
+  }, []);
+
+  // 2. Cargar catálogos iniciales
   useEffect(() => {
     const fetchCatalogos = async () => {
       try {
@@ -31,54 +53,64 @@ export default function MallaCurricular() {
             api.get("/academicos/cursos"),
             api.get("/auth/docentes"),
           ]);
-        setGrados(resGrados.data.filter((g) => g.estado));
-        setSeccionesTotales(resSecciones.data.filter((s) => s.estado));
+
+        const gradosActivos = resGrados.data.filter((g) => g.estado);
+        const seccionesActivas = resSecciones.data.filter((s) => s.estado);
+
+        setGrados(gradosActivos);
+        setSeccionesTotales(seccionesActivas);
         setCursos(resCursos.data.filter((c) => c.estado));
         setDocentes(resDocentes.data);
+
+        // Auto-seleccionar primer grado y primera sección si existen
+        if (gradosActivos.length > 0) {
+          const primerGradoId = String(gradosActivos[0].id);
+          setGradoSeleccionado(primerGradoId);
+
+          const primerSeccion = seccionesActivas.find(
+            (s) => s.gradoId === Number(primerGradoId),
+          );
+          if (primerSeccion) {
+            setSeccionSeleccionada(String(primerSeccion.id));
+            fetchAsignaciones(String(primerSeccion.id));
+          }
+        }
       } catch {
         toast.error("Error al cargar los catálogos académicos");
       }
     };
     fetchCatalogos();
-  }, []);
+  }, [fetchAsignaciones]);
 
-  // 2. Filtrar secciones cuando cambie el grado
-  useEffect(() => {
-    if (gradoSeleccionado) {
-      const filtradas = seccionesTotales.filter(
-        (s) => s.gradoId === Number(gradoSeleccionado),
-      );
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSeccionesFiltradas(filtradas);
+  // Manejador al hacer clic en un Grado (Pill)
+  const handleSeleccionarGrado = (gradoId) => {
+    setGradoSeleccionado(gradoId);
+
+    // Buscar la primera sección de ese nuevo grado
+    const primerasSecciones = seccionesTotales.filter(
+      (s) => s.gradoId === Number(gradoId),
+    );
+
+    if (primerasSecciones.length > 0) {
+      const nuevaSeccionId = String(primerasSecciones[0].id);
+      setSeccionSeleccionada(nuevaSeccionId);
+      fetchAsignaciones(nuevaSeccionId);
     } else {
-      setSeccionesFiltradas([]);
-    }
-    setSeccionSeleccionada("");
-    setAsignaciones([]);
-  }, [gradoSeleccionado, seccionesTotales]);
-
-  // 3. Cargar asignaciones de la sección
-  const fetchAsignaciones = async (seccionId) => {
-    if (!seccionId) return;
-    try {
-      const res = await api.get(
-        `/academicos/asignaciones/seccion/${seccionId}`,
-      );
-      setAsignaciones(res.data);
-    } catch {
-      toast.error("Error al cargar la malla curricular");
+      setSeccionSeleccionada("");
+      setAsignaciones([]);
     }
   };
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (seccionSeleccionada) fetchAsignaciones(seccionSeleccionada);
-  }, [seccionSeleccionada]);
+  // Manejador al hacer clic en una Sección (Pill)
+  const handleSeleccionarSeccion = (seccionId) => {
+    setSeccionSeleccionada(seccionId);
+    fetchAsignaciones(seccionId);
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      {/* Header + Acciones Principales */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -96,63 +128,100 @@ export default function MallaCurricular() {
             </p>
           </div>
         </div>
+
+        {/* Botones de Acción */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowModalClonar(true)}
+            disabled={!seccionSeleccionada || asignaciones.length === 0}
+            className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 transition-all shadow-sm text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Copy size={18} /> Copiar Malla
+          </button>
+
+          <button
+            onClick={() => {
+              setAsignacionEdit(null);
+              setShowModal(true);
+            }}
+            disabled={!seccionSeleccionada}
+            style={{
+              backgroundColor: seccionSeleccionada
+                ? "var(--color-primary)"
+                : "",
+            }}
+            className={`px-4 py-2 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-all shadow-sm ${
+              !seccionSeleccionada
+                ? "bg-slate-400 cursor-not-allowed opacity-50"
+                : "hover:opacity-90"
+            }`}
+          >
+            <Plus size={18} /> Asignar Curso
+          </button>
+        </div>
       </div>
 
-      {/* Selectores de Filtro en Línea */}
-      <div className="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row items-end gap-4">
-        <div className="flex-1 w-full">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Grado Académico
-          </label>
-          <select
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-            value={gradoSeleccionado}
-            onChange={(e) => setGradoSeleccionado(e.target.value)}
-          >
-            <option value="">-- Seleccione Grado --</option>
-            {grados.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.nombre}
-              </option>
-            ))}
-          </select>
+      {/* Navegación por Pills / Tabs (Grados y Secciones) */}
+      <div className="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        {/* Pills de Grados */}
+        <div>
+          <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+            Grados Académicos
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {grados.map((g) => {
+              const isSelected = String(g.id) === String(gradoSeleccionado);
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => handleSeleccionarGrado(String(g.id))}
+                  style={
+                    isSelected
+                      ? { backgroundColor: "var(--color-primary)" }
+                      : {}
+                  }
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isSelected
+                      ? "text-white shadow-md"
+                      : "bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {g.nombre}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex-1 w-full">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Sección / Aula
-          </label>
-          <select
-            disabled={!gradoSeleccionado}
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            value={seccionSeleccionada}
-            onChange={(e) => setSeccionSeleccionada(e.target.value)}
-          >
-            <option value="">-- Seleccione Sección --</option>
-            {seccionesFiltradas.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          onClick={() => {
-            setAsignacionEdit(null);
-            setShowModal(true);
-          }}
-          disabled={!seccionSeleccionada}
-          style={{
-            backgroundColor: seccionSeleccionada ? "var(--color-primary)" : "",
-          }}
-          className={`w-full md:w-auto px-4 py-2 text-white rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm ${!seccionSeleccionada ? "bg-slate-400 cursor-not-allowed opacity-50" : "hover:opacity-90"}`}
-        >
-          <Plus size={20} /> Asignar Curso
-        </button>
+        {/* Pills de Secciones del Grado Activo */}
+        {seccionesFiltradas.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+              Secciones disponibles
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {seccionesFiltradas.map((s) => {
+                const isSelected = String(s.id) === String(seccionSeleccionada);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSeleccionarSeccion(String(s.id))}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      isSelected
+                        ? "bg-slate-800 dark:bg-white text-white dark:text-slate-900 shadow-sm"
+                        : "bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    Sección {s.nombre}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tabla o Estado Vacío */}
+      {/* Tabla de Asignaciones */}
       {seccionSeleccionada ? (
         <TablaAsignaciones
           asignaciones={asignaciones}
@@ -167,11 +236,12 @@ export default function MallaCurricular() {
       ) : (
         <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
           <p className="text-slate-500 dark:text-slate-400">
-            Seleccione un grado y su respectiva sección para gestionar la malla.
+            No hay secciones configuradas en este grado.
           </p>
         </div>
       )}
 
+      {/* Modales */}
       {showModal && (
         <ModalAsignacion
           onClose={() => setShowModal(false)}
@@ -180,7 +250,17 @@ export default function MallaCurricular() {
           cursos={cursos}
           docentes={docentes}
           asignacion={asignacionEdit}
-          asignaciones={asignaciones} // <-- AÑADE ESTA LÍNEA
+          asignaciones={asignaciones}
+        />
+      )}
+
+      {showModalClonar && (
+        <ModalClonarMalla
+          onClose={() => setShowModalClonar(false)}
+          onSuccess={() => fetchAsignaciones(seccionSeleccionada)}
+          seccionOrigenId={Number(seccionSeleccionada)}
+          secciones={seccionesTotales}
+          grados={grados}
         />
       )}
     </div>

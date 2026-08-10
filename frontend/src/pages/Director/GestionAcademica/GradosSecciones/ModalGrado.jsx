@@ -1,26 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Save } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
 export default function ModalGrado({ onClose, onSuccess, grado }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    orden: 1, // 👈 Añadimos el valor por defecto para el backend
-    estado: true,
-  });
+  // Inicialización directa sin useEffect
+  const [formData, setFormData] = useState(() => ({
+    nombre: grado?.nombre || "",
+    orden: grado?.orden || 1,
+    estado: grado ? grado.estado : true,
+  }));
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (grado) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        nombre: grado.nombre,
-        orden: grado.orden || 1, // 👈 Cargamos el orden si estamos editando
-        estado: grado.estado,
-      });
-    }
-  }, [grado]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,22 +33,21 @@ export default function ModalGrado({ onClose, onSuccess, grado }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
         <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {grado ? "Editar Grado" : "Nuevo Grado"}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
             <X size={24} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* 1. INPUT DEL NOMBRE DEL GRADO */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Nombre del Grado
@@ -75,7 +64,6 @@ export default function ModalGrado({ onClose, onSuccess, grado }) {
             />
           </div>
 
-          {/* 2. NUEVO SELECTOR DE NIVEL (Backend lee números, Frontend muestra texto) */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Nivel Educativo (Orden)
@@ -115,7 +103,6 @@ export default function ModalGrado({ onClose, onSuccess, grado }) {
             </p>
           </div>
 
-          {/* 3. CHECKBOX DE ESTADO */}
           {grado && (
             <div className="flex items-center gap-2 mt-4">
               <input
@@ -148,7 +135,7 @@ export default function ModalGrado({ onClose, onSuccess, grado }) {
               type="submit"
               disabled={loading}
               style={{ backgroundColor: "var(--color-primary)" }}
-              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm"
+              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm font-medium"
             >
               <Save size={18} />
               {loading ? "Guardando..." : "Guardar"}
