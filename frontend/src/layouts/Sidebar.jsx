@@ -1,22 +1,27 @@
-import { Link, useLocation } from "react-router-dom";
-import { GraduationCap } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { GraduationCap, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import {
   menuSuperAdmin,
-  menuSuperAdminSistema, // <--- Nueva importación
+  menuSuperAdminSistema,
   menuDirector,
   menuDocente,
   menuSistema,
 } from "./menuConfig";
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const nombreUsuario = user?.nombre || "Usuario";
-  const rolUsuario = user?.rol?.replace("ROLE_", "") || "INVITADO";
+  const nombreUsuario = user?.nombre || "Director Prueba";
+  const rolUsuario = user?.rol?.replace("ROLE_", "") || "ADMIN_COLEGIO";
 
-  // Asignación dinámica súper limpia para el menú principal
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   const getMenuItems = () => {
     switch (rolUsuario) {
       case "SUPERADMIN":
@@ -30,7 +35,6 @@ export default function Sidebar() {
     }
   };
 
-  // Asignación dinámica para el menú inferior (Sistema / Admin SaaS)
   const getSystemMenuItems = () => {
     switch (rolUsuario) {
       case "SUPERADMIN":
@@ -47,21 +51,26 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-colors duration-300 fixed left-0 top-0 z-20">
-      {/* Header del Sidebar */}
+      {/* BRANDING */}
       <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-700">
         <GraduationCap
           size={24}
           style={{ color: "var(--color-primary)" }}
           className="mr-2"
         />
-        <span className="font-bold text-lg text-slate-800 dark:text-slate-100">
-          EduGestión
-        </span>
+        <div className="flex flex-col">
+          <span className="font-bold text-lg leading-tight text-slate-800 dark:text-slate-100">
+            EduGestión
+          </span>
+          <span className="text-[10px] text-slate-400 font-medium">
+            Administración v2.0
+          </span>
+        </div>
       </div>
 
-      {/* Navegación Principal */}
+      {/* MENÚ DE NAVEGACIÓN */}
       <nav className="flex-1 p-4 overflow-y-auto">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-4">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-3">
           Menú Principal
         </p>
         <div className="space-y-1">
@@ -91,10 +100,9 @@ export default function Sidebar() {
           })}
         </div>
 
-        {/* Menú Inferior Dinámico (Oculto para Docentes) */}
         {systemMenuItems.length > 0 && (
           <>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mt-8 mb-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mt-6 mb-3">
               {rolUsuario === "SUPERADMIN" ? "Administración SaaS" : "Sistema"}
             </p>
             <div className="space-y-1">
@@ -124,14 +132,17 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* Perfil del Usuario */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+      {/* PERFIL DEL USUARIO */}
+      <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 space-y-2">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-purple-700 dark:text-purple-300 font-bold">
+          <div
+            className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+            style={{ backgroundColor: "var(--color-primary)" }}
+          >
             {nombreUsuario.charAt(0).toUpperCase()}
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-bold truncate text-slate-800 dark:text-slate-100">
+            <p className="text-xs font-bold truncate text-slate-800 dark:text-slate-100">
               {nombreUsuario}
             </p>
             <p className="text-[10px] text-slate-500 font-medium uppercase tracking-tight truncate">
@@ -139,6 +150,13 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-red-100 dark:border-red-900/40"
+        >
+          <LogOut size={14} /> Cerrar Sesión
+        </button>
       </div>
     </aside>
   );

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const api = axios.create({
   baseURL: "http://localhost:8080/api", // Ajusta a tu Gateway
@@ -22,6 +23,16 @@ api.interceptors.request.use(
     const token = localStorage.getItem("jwt_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+
+      // Extraemos el colegioId del JWT y lo adjuntamos a los headers
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.colegioId) {
+          config.headers["X-Colegio-Id"] = decoded.colegioId;
+        }
+      } catch (e) {
+        console.error("Error al decodificar token en interceptor:", e);
+      }
     }
 
     const subdominio = getSubdomain();

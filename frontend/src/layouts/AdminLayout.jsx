@@ -1,93 +1,139 @@
-import { LogOut, Search } from "lucide-react";
+// src/layouts/AdminLayout.jsx
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Search, Bell, Sun, Moon, Palette, X, ArrowRight } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useAuth } from "../context/AuthContext";
+import { menuDirector, menuSistema } from "./menuConfig";
 
-export default function AdminLayout({ children }) {
+export default function AdminLayout({
+  children,
+  theme,
+  setTheme,
+  darkMode,
+  setDarkMode,
+}) {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const [showPalette, setShowPalette] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const nombreUsuario = user?.nombre || "Usuario";
-  const rolUsuario = user?.rol?.replace("ROLE_", "") || "Administrador";
+  const rolUsuario = user?.rol?.replace("ROLE_", "") || "ADMIN_COLEGIO";
 
-  const getSearchPlaceholder = (rol) => {
-    switch (rol) {
-      case "SUPERADMIN":
-        return "Buscar colegios, usuarios...";
-      case "ADMIN_COLEGIO": // <-- Corregido para que coincida con tu backend
-        return "Buscar docentes o alumnos...";
-      case "DOCENTE":
-        return "Buscar mis clases o materiales...";
-      default:
-        return "Buscar...";
-    }
+  const themes = [
+    { id: "default", name: "Morado", color: "#5b21b6" },
+    { id: "emerald", name: "Esmeralda", color: "#059669" },
+    { id: "blue", name: "Azul", color: "#2563eb" },
+    { id: "rosa", name: "Rosa", color: "#f472b6" },
+    { id: "rojo", name: "Rojo", color: "#e11d48" },
+  ];
+
+  // Escuchar el evento de teclado Ctrl+K o Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Opciones de navegación del buscador
+  const allRoutes = [...menuDirector, ...menuSistema];
+
+  const filteredRoutes = allRoutes.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const handleNavigate = (path) => {
+    navigate(path);
+    setIsSearchOpen(false);
+    setSearchQuery("");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex font-sans">
       <Sidebar />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="flex-1 ml-64 flex flex-col min-w-0">
         <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 sticky top-0 z-10">
-          {/* LADO IZQUIERDO: Buscador Dinámico */}
-          <div className="relative w-96 hidden md:block">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder={getSearchPlaceholder(rolUsuario)}
-              className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-10 text-sm focus:outline-none transition-colors"
-              style={{ paddingLeft: "2.5rem" }} // Asegurando espacio para el ícono
-              onFocus={(e) =>
-                (e.target.style.borderColor = "var(--color-primary)")
-              }
-              onBlur={(e) => (e.target.style.borderColor = "")}
-            />
-          </div>
+          {/* BUSCADOR INTERACTIVO CMD+K */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="relative w-96 hidden md:flex items-center text-left bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+          >
+            <Search size={18} className="mr-2 text-slate-400" />
+            <span>Buscar accesos rápidos o módulos...</span>
+            <kbd className="absolute right-3 hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md">
+              ⌘K
+            </kbd>
+          </button>
 
-          {/* LADO DERECHO: Colegio, Perfil y Logout */}
-          <div className="flex items-center gap-6">
-            {/* BADGE DEL COLEGIO */}
+          {/* CONTROLES DE APARIENCIA Y TENANT */}
+          <div className="flex items-center gap-3">
             {user && rolUsuario !== "SUPERADMIN" && (
-              <div className="hidden md:flex items-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100 dark:border-indigo-800">
-                🏫 {user?.nombreColegio || "Mi Colegio"}
+              <div className="hidden md:flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-100 dark:border-indigo-800">
+                🏫 {user?.nombreColegio || "Colegio San Pedro"}
               </div>
             )}
 
-            {user && (
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden md:block">
-                  <p className="text-sm font-bold text-slate-800 dark:text-white leading-none">
-                    {nombreUsuario}
-                  </p>
-                  <p className="text-[10px] text-slate-500 font-medium mt-1">
-                    {rolUsuario.replace("_", " ")}
-                  </p>
-                </div>
-                {/* Avatar circular dinámico */}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm"
-                  style={{ backgroundColor: "var(--color-primary, #3b82f6)" }}
-                >
-                  {nombreUsuario.charAt(0).toUpperCase()}
-                </div>
-              </div>
-            )}
+            {/* SELECTOR DE PALETA DE COLOR */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPalette(!showPalette)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                title="Personalizar color de tema"
+              >
+                <Palette size={18} style={{ color: "var(--color-primary)" }} />
+              </button>
 
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
+              {showPalette && (
+                <div className="absolute right-0 mt-2 p-2 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {themes.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setTheme(t.id);
+                        setShowPalette(false);
+                      }}
+                      title={t.name}
+                      className={`w-6 h-6 rounded-full transition-transform hover:scale-125 ${
+                        theme === t.id
+                          ? "ring-2 ring-offset-2 ring-indigo-500 scale-110"
+                          : ""
+                      }`}
+                      style={{ backgroundColor: t.color }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
 
+            {/* NOTIFICACIONES */}
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-sm font-medium"
+              className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              title="Notificaciones"
             >
-              <LogOut size={18} /> Cerrar Sesión
+              <Bell size={18} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            {/* TOGGLE MODO OSCURO */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              title="Cambiar tema"
+            >
+              {darkMode ? (
+                <Sun size={18} className="text-yellow-500" />
+              ) : (
+                <Moon size={18} />
+              )}
             </button>
           </div>
         </header>
@@ -96,6 +142,62 @@ export default function AdminLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* MODAL PALETA DE COMANDOS (CMD + K) */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center pt-20 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
+              <Search size={20} className="text-slate-400 mr-2" />
+              <input
+                type="text"
+                placeholder="Escribe un módulo o acción (ej: Periodos, Caja, Estudiantes)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="w-full py-4 bg-transparent text-slate-800 dark:text-slate-100 text-sm focus:outline-none"
+              />
+              <button
+                onClick={() => setIsSearchOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-2 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+              {" "}
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">
+                Navegación Rápida
+              </p>
+              {filteredRoutes.length === 0 ? (
+                <p className="p-4 text-center text-sm text-slate-400">
+                  No se encontraron resultados para "{searchQuery}"
+                </p>
+              ) : (
+                filteredRoutes.map((route) => (
+                  <button
+                    key={route.name}
+                    onClick={() => handleNavigate(route.path)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-indigo-600 dark:text-indigo-400">
+                        {route.icon}
+                      </span>
+                      <span>{route.name}</span>
+                    </div>
+                    <ArrowRight
+                      size={16}
+                      className="text-slate-400 group-hover:translate-x-1 transition-transform"
+                    />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

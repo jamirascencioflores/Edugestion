@@ -74,7 +74,8 @@ public class UsuarioController {
     ) {
         try {
             String email = authentication.getName();
-            usuarioUseCase.cambiarPassword(email, dto.nuevaPassword());
+            // 👈 Pasamos actualPassword y nuevaPassword
+            usuarioUseCase.cambiarPassword(email, dto.actualPassword(), dto.nuevaPassword());
 
             return ResponseEntity.ok(
                     java.util.Map.of("mensaje", "Contraseña actualizada exitosamente")

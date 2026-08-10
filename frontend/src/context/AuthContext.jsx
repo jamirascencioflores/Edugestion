@@ -4,6 +4,11 @@ import { jwtDecode } from "jwt-decode";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  // Estado para la bandera de Autenticación de Doble Factor (2FA)
+  const [is2FAEnabled, setIs2FAEnabled] = useState(() => {
+    return localStorage.getItem("user_2fa_enabled") === "true";
+  });
+
   // Inicialización síncrona: Lee el localStorage al momento de crear el estado
   const [user, setUser] = useState(() => {
     const token = localStorage.getItem("jwt_token");
@@ -12,7 +17,6 @@ export const AuthProvider = ({ children }) => {
         const decoded = jwtDecode(token);
 
         // Validación de seguridad: Comprobar si el token ya expiró
-        // (decoded.exp está en segundos, Date.now() en milisegundos)
         const currentTime = Date.now() / 1000;
         if (decoded.exp < currentTime) {
           console.warn("Sesión expirada. Por favor, inicia sesión nuevamente.");
@@ -20,7 +24,6 @@ export const AuthProvider = ({ children }) => {
           return null;
         }
 
-        // El objeto decoded ahora contiene: email, userId, nombre, rol y colegioId
         return decoded;
       } catch {
         localStorage.removeItem("jwt_token");
@@ -34,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const decoded = jwtDecode(token);
       localStorage.setItem("jwt_token", token);
-      setUser(decoded); // Esto debe disparar el re-render de las rutas protegidas
+      setUser(decoded);
     } catch (error) {
       console.error("Error al decodificar token en login:", error);
     }
@@ -45,14 +48,26 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Función para alternar el 2FA y guardar su estado
+  const toggle2FA = (enabled) => {
+    setIs2FAEnabled(enabled);
+    localStorage.setItem("user_2fa_enabled", enabled ? "true" : "false");
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        is2FAEnabled,
+        toggle2FA,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Deshabilitamos la advertencia de Vite solo para esta línea,
-// ya que es el estándar en la comunidad exportar el hook desde el mismo archivo.
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

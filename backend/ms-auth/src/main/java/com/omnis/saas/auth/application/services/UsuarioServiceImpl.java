@@ -95,12 +95,19 @@ public class UsuarioServiceImpl implements UsuarioUseCase {
 
     @Override
     @Transactional
-    public void cambiarPassword(String email, String nuevaPassword) {
+    public void cambiarPassword(String email, String actualPassword, String nuevaPassword) {
         Usuario usuario = usuarioRepositoryPort.buscarPorEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        // 1. Validar que la contraseña actual ingresada coincida con el hash de la BD
+        if (!passwordEncoder.matches(actualPassword, usuario.getPasswordHash())) {
+            throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+
+        // 2. Encriptar y guardar la nueva contraseña
         usuario.setPasswordHash(passwordEncoder.encode(nuevaPassword));
         usuario.setDebeCambiarPassword(false);
+
         usuarioRepositoryPort.guardar(usuario);
     }
 

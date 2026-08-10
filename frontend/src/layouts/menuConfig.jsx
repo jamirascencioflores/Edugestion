@@ -1,3 +1,5 @@
+//src/layouts/menuConfig.jsx
+
 import {
   LayoutDashboard,
   School,
