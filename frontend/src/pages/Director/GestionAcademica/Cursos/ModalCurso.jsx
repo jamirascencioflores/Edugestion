@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
 export default function ModalCurso({ onClose, onSuccess, curso }) {
-  // Inicializamos el estado directamente evaluando si el prop 'curso' trae datos
   const [formData, setFormData] = useState({
     nombre: curso?.nombre || "",
     descripcion: curso?.descripcion || "",
@@ -31,31 +30,34 @@ export default function ModalCurso({ onClose, onSuccess, curso }) {
       setLoading(false);
     }
   };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden">
-        <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-slate-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {curso ? "Editar Curso" : "Nuevo Curso"}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Nombre del Curso
             </label>
             <input
               type="text"
               required
               placeholder="Ej: Matemáticas Avanzadas"
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-transparent text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500/50 focus:outline-none text-sm"
               value={formData.nombre}
               onChange={(e) =>
                 setFormData({ ...formData, nombre: e.target.value })
@@ -64,13 +66,13 @@ export default function ModalCurso({ onClose, onSuccess, curso }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Descripción (Opcional)
             </label>
             <textarea
               rows="3"
               placeholder="Breve detalle del contenido del curso..."
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-transparent text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500/50 focus:outline-none text-sm resize-none"
               value={formData.descripcion}
               onChange={(e) =>
                 setFormData({ ...formData, descripcion: e.target.value })
@@ -78,32 +80,43 @@ export default function ModalCurso({ onClose, onSuccess, curso }) {
             />
           </div>
 
-          {curso && (
-            <div className="flex items-center gap-2 mt-4">
-              <input
-                type="checkbox"
-                id="estadoCurso"
-                style={{ accentColor: "var(--color-primary)" }}
-                className="w-4 h-4"
-                checked={formData.estado}
-                onChange={(e) =>
-                  setFormData({ ...formData, estado: e.target.checked })
-                }
+          {/* Toggle Switch Tipo Barra */}
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={formData.estado}
+              onClick={() =>
+                setFormData((prev) => ({ ...prev, estado: !prev.estado }))
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                formData.estado
+                  ? "bg-[var(--color-primary)]"
+                  : "bg-slate-300 dark:bg-slate-600"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  formData.estado ? "translate-x-6" : "translate-x-1"
+                }`}
               />
-              <label
-                htmlFor="estadoCurso"
-                className="text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Curso Activo
-              </label>
-            </div>
-          )}
+            </button>
+            <label
+              onClick={() =>
+                setFormData((prev) => ({ ...prev, estado: !prev.estado }))
+              }
+              className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+            >
+              Curso Activo
+            </label>
+          </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          {/* Footer */}
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium"
             >
               Cancelar
             </button>
@@ -111,9 +124,9 @@ export default function ModalCurso({ onClose, onSuccess, curso }) {
               type="submit"
               disabled={loading}
               style={{ backgroundColor: "var(--color-primary)" }}
-              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm"
+              className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-sm text-sm font-semibold"
             >
-              <Save size={18} />
+              <Save size={16} />
               {loading ? "Guardando..." : "Guardar"}
             </button>
           </div>
