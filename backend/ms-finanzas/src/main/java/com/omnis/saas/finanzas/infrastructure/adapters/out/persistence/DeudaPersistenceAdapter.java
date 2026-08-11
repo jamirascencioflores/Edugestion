@@ -3,6 +3,7 @@ package com.omnis.saas.finanzas.infrastructure.adapters.out.persistence;
 import com.omnis.saas.finanzas.domain.model.Deuda;
 import com.omnis.saas.finanzas.domain.model.EstadoDeuda;
 import com.omnis.saas.finanzas.domain.ports.out.DeudaRepositoryPort;
+import com.omnis.saas.finanzas.infrastructure.adapters.out.persistence.entity.DeudaEntity;
 import com.omnis.saas.finanzas.infrastructure.adapters.out.persistence.mapper.DeudaMapper;
 import com.omnis.saas.finanzas.infrastructure.adapters.out.persistence.repository.DeudaJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -56,5 +57,10 @@ public class DeudaPersistenceAdapter implements DeudaRepositoryPort {
         return repository.findByColegioIdAndEstudianteIdAndEstadoAndMotivoReversion(
                 colegioId, estudianteId, EstadoDeuda.ANULADA, "Alumno Retirado"
         ).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public List<DeudaEntity> findByColegioIdAndEstado(Long colegioId, EstadoDeuda estado) {
+        return repository.findByColegioIdAndEstado(colegioId, estado);
     }
 }

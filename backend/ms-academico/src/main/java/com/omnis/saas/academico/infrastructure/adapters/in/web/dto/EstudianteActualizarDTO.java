@@ -11,5 +11,10 @@ public record EstudianteActualizarDTO(
         String emailInstitucional,
         Long seccionId,
         Boolean estado,
-        List<Long> apoderadoIds
+        List<Long> apoderadoIds,
+        // 👇 Nuevos campos para actualización
+        String nombreApoderado,
+        String dniApoderado,
+        String telefonoApoderado,
+        String parentescoApoderado
 ) {}

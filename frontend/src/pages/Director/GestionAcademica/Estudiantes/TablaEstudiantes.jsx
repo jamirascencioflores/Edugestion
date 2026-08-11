@@ -150,6 +150,12 @@ export default function TablaEstudiantes({
                         </p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           DNI: {e.dni}
+                          {e.nombreApoderado &&
+                            String(e.nombreApoderado).trim() !== "" && (
+                              <span className="ml-1 text-slate-500 dark:text-slate-400 font-medium">
+                                • Apoderado: {e.nombreApoderado}
+                              </span>
+                            )}
                         </p>
                       </div>
                     </div>

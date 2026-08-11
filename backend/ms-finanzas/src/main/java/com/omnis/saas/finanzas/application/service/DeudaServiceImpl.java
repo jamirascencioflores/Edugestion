@@ -8,6 +8,8 @@ import com.omnis.saas.finanzas.domain.ports.in.DeudaUseCase;
 import com.omnis.saas.finanzas.domain.ports.out.DeudaRepositoryPort;
 import com.omnis.saas.finanzas.domain.ports.out.HistorialPagoRepositoryPort;
 import com.omnis.saas.finanzas.domain.ports.out.TarifarioRepositoryPort;
+import com.omnis.saas.finanzas.infrastructure.adapters.in.web.dto.ReporteMorosoDTO;
+import com.omnis.saas.finanzas.infrastructure.adapters.out.persistence.entity.DeudaEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,10 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -274,5 +278,41 @@ public class DeudaServiceImpl implements DeudaUseCase {
             System.err.println(">>> ERROR RESOLVIENDO GRADO VÍA SECCIÓN: " + e.getMessage());
         }
         return null;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReporteMorosoDTO> obtenerDetalleMorosos(Long colegioId) {
+        // Llama directamente al método del repositorio
+        List<DeudaEntity> deudasPendientes = deudaRepository.findByColegioIdAndEstado(colegioId, EstadoDeuda.PENDIENTE);
+
+        Map<Long, List<DeudaEntity>> deudasPorEstudiante = deudasPendientes.stream()
+                .collect(Collectors.groupingBy(DeudaEntity::getEstudianteId));
+
+        List<ReporteMorosoDTO> reporte = new ArrayList<>();
+
+        for (Map.Entry<Long, List<DeudaEntity>> entry : deudasPorEstudiante.entrySet()) {
+            Long estudianteId = entry.getKey();
+            List<DeudaEntity> deudas = entry.getValue();
+
+            BigDecimal montoTotal = deudas.stream()
+                    .map(DeudaEntity::getMonto)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            List<String> conceptosPendientes = deudas.stream()
+                    .map(DeudaEntity::getConcepto)
+                    .collect(Collectors.toList());
+
+            reporte.add(ReporteMorosoDTO.builder()
+                    .estudianteId(estudianteId)
+                    .nombreEstudiante("Estudiante ID: " + estudianteId)
+                    .dni("DNI-" + estudianteId)
+                    .gradoSeccion("1er Año A")
+                    .mesesAtrasados((long) deudas.size())
+                    .montoTotalDeuda(montoTotal)
+                    .mesesPendientes(conceptosPendientes)
+                    .build());
+        }
+
+        return reporte;
     }
 }

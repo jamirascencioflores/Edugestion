@@ -15,7 +15,9 @@ public class EstudiantePersistenceAdapter implements EstudianteRepositoryPort {
     private final EstudianteJpaRepository repository;
     private final EstudianteMapper mapper;
 
-    @Override public Estudiante guardar(Estudiante estudiante) { return mapper.toDomain(repository.save(mapper.toEntity(estudiante))); }
+    @Override public Estudiante guardar(Estudiante estudiante) {
+        return mapper.toDomain(repository.save(mapper.toEntity(estudiante)));
+    }
     @Override public List<Estudiante> buscarTodos() { return repository.findAll().stream().map(mapper::toDomain).toList(); }
     @Override
     public Optional<Estudiante> buscarPorId(Long id) {

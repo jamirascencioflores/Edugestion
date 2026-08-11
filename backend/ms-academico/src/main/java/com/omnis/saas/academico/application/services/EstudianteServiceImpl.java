@@ -43,7 +43,6 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
             throw new RuntimeException("Sin permisos para modificar este estudiante");
         }
 
-        // 1. Guardamos el estado anterior como Boolean
         Boolean estadoAnterior = existente.getEstado();
 
         existente.setNombres(dto.nombres());
@@ -55,20 +54,22 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
         existente.setEstado(dto.estado());
         existente.setApoderadoIds(dto.apoderadoIds() != null ? dto.apoderadoIds() : List.of());
 
+        // 👇 Actualización de datos del apoderado
+        existente.setNombreApoderado(dto.nombreApoderado());
+        existente.setDniApoderado(dto.dniApoderado());
+        existente.setTelefonoApoderado(dto.telefonoApoderado());
+        existente.setParentescoApoderado(dto.parentescoApoderado());
+
         Estudiante actualizado = repositoryPort.guardar(existente);
 
-        // 2. Si el estado cambió de true (Activo) a false (Retirado), disparamos el evento
         if (Boolean.TRUE.equals(estadoAnterior) && Boolean.FALSE.equals(dto.estado())) {
             eventPublisher.publicarAlumnoRetirado(colegioId, id);
-        }
-        // Si el estado cambió de false (Retirado) a true (Activo)
-        else if (Boolean.FALSE.equals(estadoAnterior) && Boolean.TRUE.equals(dto.estado())) {
+        } else if (Boolean.FALSE.equals(estadoAnterior) && Boolean.TRUE.equals(dto.estado())) {
             eventPublisher.publicarAlumnoReactivado(colegioId, id);
         }
 
         return actualizado;
     }
-
     @Override
     @Transactional
     public void eliminar(Long id, Long colegioId) {
@@ -95,4 +96,6 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
         return repositoryPort.buscarPorId(id)
                 .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con ID: " + id));
     }
+
+
 }

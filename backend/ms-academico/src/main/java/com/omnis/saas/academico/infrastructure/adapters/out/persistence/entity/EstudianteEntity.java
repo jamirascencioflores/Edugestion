@@ -57,4 +57,17 @@ public class EstudianteEntity {
     @Column(name = "usuario_apoderado_id")
     @Builder.Default
     private List<Long> apoderadoIds = new ArrayList<>();
+
+    // 👇 Nuevos campos para datos directos del apoderado
+    @Column(name = "nombre_apoderado")
+    private String nombreApoderado;
+
+    @Column(name = "dni_apoderado", length = 15)
+    private String dniApoderado;
+
+    @Column(name = "telefono_apoderado", length = 20)
+    private String telefonoApoderado;
+
+    @Column(name = "parentesco_apoderado", length = 50)
+    private String parentescoApoderado;
 }

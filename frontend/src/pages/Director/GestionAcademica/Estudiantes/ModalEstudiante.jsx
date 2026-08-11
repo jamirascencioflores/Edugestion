@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
@@ -25,6 +25,11 @@ const obtenerDatosFormulario = (estudiante, hoy, anioActual) => {
       fechaInscripcion: fechaInscFormateada,
       estado: estudiante.estado ?? true,
       apoderadoIds: estudiante.apoderadoIds || [],
+      // 👇 Campos de apoderado agregados
+      nombreApoderado: estudiante.nombreApoderado || "",
+      dniApoderado: estudiante.dniApoderado || "",
+      telefonoApoderado: estudiante.telefonoApoderado || "",
+      parentescoApoderado: estudiante.parentescoApoderado || "PADRE",
     };
   }
 
@@ -40,6 +45,11 @@ const obtenerDatosFormulario = (estudiante, hoy, anioActual) => {
     fechaInscripcion: hoy,
     estado: true,
     apoderadoIds: [],
+    // 👇 Valores por defecto
+    nombreApoderado: "",
+    dniApoderado: "",
+    telefonoApoderado: "",
+    parentescoApoderado: "PADRE",
   };
 };
 
@@ -144,7 +154,7 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
     try {
       if (estudiante) {
         await api.put(`/academicos/estudiantes/${estudiante.id}`, formData);
-        toast.success("Estudiante actualizado correctamente");
+        toast.success("Estudiante y datos de apoderado actualizados");
       } else {
         await api.post("/academicos/estudiantes", formData);
         toast.success("Estudiante registrado y matriculado con éxito");
@@ -177,150 +187,229 @@ export default function ModalEstudiante({ onClose, onSuccess, estudiante }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Nombres
-              </label>
-              <input
-                type="text"
-                name="nombres"
-                required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
-                value={formData.nombres}
-                onChange={handleChange}
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* SECCIÓN 1: DATOS DEL ESTUDIANTE */}
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              Datos Personales del Estudiante
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Nombres
+                </label>
+                <input
+                  type="text"
+                  name="nombres"
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.nombres}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Apellidos
-              </label>
-              <input
-                type="text"
-                name="apellidos"
-                required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
-                value={formData.apellidos}
-                onChange={handleChange}
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Apellidos
+                </label>
+                <input
+                  type="text"
+                  name="apellidos"
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.apellidos}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                DNI
-              </label>
-              <input
-                type="text"
-                name="dni"
-                required
-                maxLength="15"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
-                value={formData.dni}
-                onChange={handleChange}
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  DNI
+                </label>
+                <input
+                  type="text"
+                  name="dni"
+                  required
+                  maxLength="15"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.dni}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Fecha de Nacimiento
-              </label>
-              <input
-                type="date"
-                name="fechaNacimiento"
-                required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm scheme-light dark:scheme-dark"
-                value={formData.fechaNacimiento}
-                onChange={handleChange}
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Fecha de Nacimiento
+                </label>
+                <input
+                  type="date"
+                  name="fechaNacimiento"
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm scheme-light dark:scheme-dark"
+                  value={formData.fechaNacimiento}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Email Institucional (Opcional)
-              </label>
-              <input
-                type="email"
-                name="emailInstitucional"
-                placeholder="ejemplo@colegio.edu.pe"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
-                value={formData.emailInstitucional}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Email Institucional (Opcional)
+                </label>
+                <input
+                  type="email"
+                  name="emailInstitucional"
+                  placeholder="ejemplo@colegio.edu.pe"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.emailInstitucional}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Año de Matrícula
-              </label>
-              <input
-                type="number"
-                name="anioEscolar"
-                required
-                min="2020"
-                max="2100"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
-                value={formData.anioEscolar}
-                onChange={handleChange}
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Año de Matrícula
+                </label>
+                <input
+                  type="number"
+                  name="anioEscolar"
+                  required
+                  min="2020"
+                  max="2100"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.anioEscolar}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Fecha de Inscripción
-              </label>
-              <input
-                type="date"
-                name="fechaInscripcion"
-                required
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm scheme-light dark:scheme-dark"
-                value={formData.fechaInscripcion}
-                onChange={handleChange}
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Fecha de Inscripción
+                </label>
+                <input
+                  type="date"
+                  name="fechaInscripcion"
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm scheme-light dark:scheme-dark"
+                  value={formData.fechaInscripcion}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Grado
-              </label>
-              <select
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
-                value={gradoSeleccionado}
-                onChange={handleGradoChange}
-              >
-                <option value="">Seleccione un grado...</option>
-                {grados.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Grado
+                </label>
+                <select
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={gradoSeleccionado}
+                  onChange={handleGradoChange}
+                >
+                  <option value="">Seleccione un grado...</option>
+                  {grados.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Sección
-              </label>
-              <select
-                name="seccionId"
-                required
-                disabled={!gradoSeleccionado}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
-                value={formData.seccionId}
-                onChange={handleChange}
-              >
-                <option value="">Seleccione una sección...</option>
-                {seccionesFiltradas.map((sec) => (
-                  <option key={sec.id} value={sec.id}>
-                    Sección {sec.nombre}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Sección
+                </label>
+                <select
+                  name="seccionId"
+                  required
+                  disabled={!gradoSeleccionado}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                  value={formData.seccionId}
+                  onChange={handleChange}
+                >
+                  <option value="">Seleccione una sección...</option>
+                  {seccionesFiltradas.map((sec) => (
+                    <option key={sec.id} value={sec.id}>
+                      Sección {sec.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="pt-6 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700 mt-6">
+          {/* SECCIÓN 2: DATOS DEL APODERADO PRINCIPAL */}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <UserCheck
+                size={16}
+                className="text-purple-600 dark:text-purple-400"
+              />
+              Datos del Apoderado Principal
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Nombre Completo del Apoderado
+                </label>
+                <input
+                  type="text"
+                  name="nombreApoderado"
+                  placeholder="Ej: Carlos Gómez Ruiz"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.nombreApoderado}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  DNI del Apoderado
+                </label>
+                <input
+                  type="text"
+                  name="dniApoderado"
+                  placeholder="8 dígitos"
+                  maxLength="15"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.dniApoderado}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Teléfono / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  name="telefonoApoderado"
+                  placeholder="Ej: 987654321"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.telefonoApoderado}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Parentesco
+                </label>
+                <select
+                  name="parentescoApoderado"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                  value={formData.parentescoApoderado}
+                  onChange={handleChange}
+                >
+                  <option value="PADRE">Padre</option>
+                  <option value="MADRE">Madre</option>
+                  <option value="APODERADO_LEGAL">
+                    Apoderado Legal / Tutor
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}

@@ -14,7 +14,12 @@ public record EstudianteRegistroDTO(
         List<Long> apoderadoIds,
         Long gradoId,
         Integer anioEscolar,
-        LocalDate fechaInscripcion // <-- Campo añadido
+        LocalDate fechaInscripcion,
+        // 👇 Nuevos campos
+        String nombreApoderado,
+        String dniApoderado,
+        String telefonoApoderado,
+        String parentescoApoderado
 ) {
     public Estudiante toDomain(Long colegioId) {
         return Estudiante.builder()
@@ -27,6 +32,10 @@ public record EstudianteRegistroDTO(
                 .colegioId(colegioId)
                 .estado(true)
                 .apoderadoIds(this.apoderadoIds != null ? this.apoderadoIds : List.of())
+                .nombreApoderado(this.nombreApoderado)
+                .dniApoderado(this.dniApoderado)
+                .telefonoApoderado(this.telefonoApoderado)
+                .parentescoApoderado(this.parentescoApoderado)
                 .build();
     }
 }

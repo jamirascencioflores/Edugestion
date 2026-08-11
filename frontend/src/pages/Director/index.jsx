@@ -315,7 +315,7 @@ export default function DashboardDirector() {
               </button>
 
               <button
-                onClick={() => navigate("/tarifarios")}
+                onClick={() => navigate("/reporte-morosos")}
                 className="p-4 bg-rose-50/50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-xl border border-rose-100 dark:border-rose-900/40 transition-all text-center space-y-2 group"
               >
                 <div className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">

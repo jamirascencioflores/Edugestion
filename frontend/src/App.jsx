@@ -28,6 +28,7 @@ import Seguridad from "./pages/SuperAdmin/Seguridad"; // Importación para Segur
 import SeguridadPage from "./pages/Director/Seguridad"; // Importación para Seguridad del Director
 import Configuracion from "./pages/SuperAdmin/Configuracion"; // Importación para Configuración
 import ConfiguracionPage from "./pages/public/ConfiguracionPage";
+import ReporteMorosos from "./pages/Director/ReporteMorosos"; // Importación para Reporte de Morosos
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -308,6 +309,22 @@ function App() {
                   setDarkMode={setDarkMode}
                 >
                   <CajaIndex />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reporte-morosos"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN_COLEGIO"]}>
+                <AdminLayout
+                  theme={theme}
+                  setTheme={setTheme}
+                  darkMode={darkMode}
+                  setDarkMode={setDarkMode}
+                >
+                  <ReporteMorosos />
                 </AdminLayout>
               </ProtectedRoute>
             }

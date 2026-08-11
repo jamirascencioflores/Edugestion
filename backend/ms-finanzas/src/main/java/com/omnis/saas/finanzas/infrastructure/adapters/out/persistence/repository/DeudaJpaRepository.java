@@ -35,4 +35,6 @@ public interface DeudaJpaRepository extends JpaRepository<DeudaEntity, Long> {
 
     @Query("SELECT SUM(d.monto) FROM DeudaEntity d WHERE d.colegioId = :colegioId AND d.fechaVencimiento BETWEEN :inicio AND :fin")
     BigDecimal sumMontoByColegioIdAndFechaVencimientoBetween(@Param("colegioId") Long colegioId, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    List<DeudaEntity> findByColegioIdAndEstado(Long colegioId, EstadoDeuda estado);
 }

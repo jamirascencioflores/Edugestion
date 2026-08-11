@@ -1,6 +1,8 @@
 package com.omnis.saas.finanzas.infrastructure.adapters.in.web;
 
+import com.omnis.saas.finanzas.application.service.DeudaServiceImpl;
 import com.omnis.saas.finanzas.domain.model.EstadoDeuda;
+import com.omnis.saas.finanzas.infrastructure.adapters.in.web.dto.ReporteMorosoDTO;
 import com.omnis.saas.finanzas.infrastructure.adapters.in.web.dto.ResumenFinancieroDTO;
 import com.omnis.saas.finanzas.infrastructure.adapters.out.persistence.repository.DeudaJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/finanzas/dashboard")
@@ -16,6 +19,7 @@ import java.time.LocalDate;
 public class DashboardFinanzasController {
 
     private final DeudaJpaRepository deudaRepository;
+    private final DeudaServiceImpl deudaService;
 
     @GetMapping("/resumen")
     public ResponseEntity<ResumenFinancieroDTO> obtenerResumenFinanciero(
@@ -52,5 +56,16 @@ public class DashboardFinanzasController {
                 .build();
 
         return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/morosos/detalle")
+    public ResponseEntity<List<ReporteMorosoDTO>> obtenerReporteMorososDetalle(
+            @RequestHeader("X-Colegio-Id") Long colegioId) {
+
+        // Consulta las deudas en estado PENDIENTE o ANULADA/VENCIDA agrupadas por estudiante
+        // (Ajustar lógica del servicio según las entidades existentes)
+        List<ReporteMorosoDTO> listaMorosos = deudaService.obtenerDetalleMorosos(colegioId);
+
+        return ResponseEntity.ok(listaMorosos);
     }
 }

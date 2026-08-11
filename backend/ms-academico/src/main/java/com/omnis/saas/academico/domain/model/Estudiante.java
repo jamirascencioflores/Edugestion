@@ -19,6 +19,12 @@ public class Estudiante {
     private Boolean estado;
     private List<Long> apoderadoIds;
 
+    // 👇 Datos de Contacto Directo del Apoderado (Principal)
+    private String nombreApoderado;
+    private String dniApoderado;
+    private String telefonoApoderado;
+    private String parentescoApoderado;
+
     public String getNombreCompleto() {
         return this.nombres + " " + this.apellidos;
     }
