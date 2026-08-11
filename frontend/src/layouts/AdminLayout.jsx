@@ -1,11 +1,24 @@
-// src/layouts/AdminLayout.jsx
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Sun, Moon, Palette, X, ArrowRight } from "lucide-react";
+import {
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  Palette,
+  X,
+  ArrowRight,
+  Menu,
+} from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useAuth } from "../context/AuthContext";
-import { menuDirector, menuSistema } from "./menuConfig";
+import {
+  menuSuperAdmin,
+  menuSuperAdminSistema,
+  menuDirector,
+  menuDocente,
+  menuSistema,
+} from "./menuConfig";
 
 export default function AdminLayout({
   children,
@@ -19,9 +32,15 @@ export default function AdminLayout({
 
   const [showPalette, setShowPalette] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // 👈 Estado para menú móvil
   const [searchQuery, setSearchQuery] = useState("");
 
   const rolUsuario = user?.rol?.replace("ROLE_", "") || "ADMIN_COLEGIO";
+
+  const isMac =
+    typeof window !== "undefined" &&
+    /Mac|iPod|iPhone|iPad/.test(navigator.userAgent || navigator.platform);
+  const kbdText = isMac ? "⌘K" : "Ctrl+K";
 
   const themes = [
     { id: "default", name: "Morado", color: "#5b21b6" },
@@ -31,7 +50,6 @@ export default function AdminLayout({
     { id: "rojo", name: "Rojo", color: "#e11d48" },
   ];
 
-  // Escuchar el evento de teclado Ctrl+K o Cmd+K
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -43,8 +61,20 @@ export default function AdminLayout({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Opciones de navegación del buscador
-  const allRoutes = [...menuDirector, ...menuSistema];
+  const getAllRoutesForUser = () => {
+    switch (rolUsuario) {
+      case "SUPERADMIN":
+        return [...menuSuperAdmin, ...menuSuperAdminSistema];
+      case "ADMIN_COLEGIO":
+        return [...menuDirector, ...menuSistema];
+      case "DOCENTE":
+        return menuDocente;
+      default:
+        return [];
+    }
+  };
+
+  const allRoutes = getAllRoutesForUser();
 
   const filteredRoutes = allRoutes.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -58,31 +88,45 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex font-sans">
-      <Sidebar />
+      {/* Sidebar con Drawer Móvil */}
+      <Sidebar
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
 
-      <div className="flex-1 ml-64 flex flex-col min-w-0">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 sticky top-0 z-10">
-          {/* BUSCADOR INTERACTIVO CMD+K */}
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="relative w-96 hidden md:flex items-center text-left bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-          >
-            <Search size={18} className="mr-2 text-slate-400" />
-            <span>Buscar accesos rápidos o módulos...</span>
-            <kbd className="absolute right-3 hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md">
-              ⌘K
-            </kbd>
-          </button>
-
-          {/* CONTROLES DE APARIENCIA Y TENANT */}
+      {/* Contenedor principal: ml-0 en móvil, ml-64 en desktop */}
+      <div className="flex-1 ml-0 md:ml-64 flex flex-col min-w-0">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+          {/* Botón Hamburguesa (Móvil) + Buscador (Desktop) */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+              title="Abrir menú"
+            >
+              <Menu size={22} />
+            </button>
+
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="relative w-full sm:w-80 md:w-96 flex items-center text-left bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-xs md:text-sm text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+            >
+              <Search size={16} className="mr-2 text-slate-400 shrink-0" />
+              <span className="truncate">Buscar accesos rápidos...</span>
+              <kbd className="absolute right-3 hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md">
+                {kbdText}
+              </kbd>
+            </button>
+          </div>
+
+          {/* CONTROLES DERECHA */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {user && rolUsuario !== "SUPERADMIN" && (
-              <div className="hidden md:flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-100 dark:border-indigo-800">
+              <div className="hidden lg:flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-100 dark:border-indigo-800">
                 🏫 {user?.nombreColegio || "Colegio San Pedro"}
               </div>
             )}
 
-            {/* SELECTOR DE PALETA DE COLOR */}
             <div className="relative">
               <button
                 onClick={() => setShowPalette(!showPalette)}
@@ -114,7 +158,6 @@ export default function AdminLayout({
               )}
             </div>
 
-            {/* NOTIFICACIONES */}
             <button
               className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               title="Notificaciones"
@@ -123,7 +166,6 @@ export default function AdminLayout({
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
 
-            {/* TOGGLE MODO OSCURO */}
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -138,20 +180,20 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <main className="p-8 flex-1 overflow-auto text-slate-900 dark:text-slate-100">
+        <main className="p-4 md:p-8 flex-1 overflow-auto text-slate-900 dark:text-slate-100">
           {children}
         </main>
       </div>
 
-      {/* MODAL PALETA DE COMANDOS (CMD + K) */}
+      {/* MODAL PALETA DE COMANDOS */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center pt-20 p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center pt-16 md:pt-20 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
-              <Search size={20} className="text-slate-400 mr-2" />
+              <Search size={20} className="text-slate-400 mr-2 shrink-0" />
               <input
                 type="text"
-                placeholder="Escribe un módulo o acción (ej: Periodos, Caja, Estudiantes)..."
+                placeholder="Escribe un módulo o acción..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -165,8 +207,7 @@ export default function AdminLayout({
               </button>
             </div>
 
-            <div className="p-2 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
-              {" "}
+            <div className="p-2 max-h-80 overflow-y-auto">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">
                 Navegación Rápida
               </p>

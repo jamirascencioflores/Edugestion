@@ -1,3 +1,4 @@
+//src/components/FeatureGuard.jsx
 import { Lock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 

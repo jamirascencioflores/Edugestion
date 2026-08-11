@@ -5,15 +5,13 @@ spring:
   application:
     name: ms-comunicacion
   datasource:
-    url: jdbc:postgresql://${POSTGRES_SERVER}:5432/saas_academico_db
+    url: jdbc:postgresql://${POSTGRES_SERVER:localhost}:5432/saas_comunicacion_db
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:tu_password_aqui}
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
   rabbitmq:
     host: ${RABBITMQ_SERVER:localhost}
     port: 5672

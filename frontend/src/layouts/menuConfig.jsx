@@ -14,6 +14,7 @@ import {
   Network,
   GraduationCap,
   Wallet,
+  AlertTriangle,
   Megaphone, // <--- Nuevo ícono importado para los anuncios
 } from "lucide-react";
 
@@ -63,6 +64,11 @@ export const menuDirector = [
     path: "/estudiantes",
     icon: <GraduationCap size={20} />,
   },
+  {
+    name: "Comunicados", // 👈 NUEVO MÓDULO AÑADIDO
+    path: "/anuncios",
+    icon: <Megaphone size={20} />,
+  },
   { name: "Periodos", path: "/periodos", icon: <BookOpen size={20} /> },
   {
     name: "Grados y Secciones",
@@ -89,6 +95,11 @@ export const menuDirector = [
     path: "/caja",
     icon: <CreditCard size={20} />,
   },
+  {
+    name: "Control de Morosidad", // 👈 AÑADIDO
+    path: "/reporte-morosos",
+    icon: <AlertTriangle size={20} />,
+  },
 ];
 
 // --- MENÚS DOCENTE ---
@@ -103,10 +114,7 @@ export const menuDocente = [
     path: "/calificaciones",
     icon: <Award size={20} />,
   },
-  { name: "Materiales", 
-    path: "/materiales", 
-    icon: <BookOpen size={20} /> 
-  },
+  { name: "Materiales", path: "/materiales", icon: <BookOpen size={20} /> },
 ];
 
 // --- MENÚS SISTEMA (ADMIN_COLEGIO) ---
@@ -116,8 +124,9 @@ export const menuSistema = [
     path: "/configuracionpage",
     icon: <Settings size={20} />,
   },
-  { name: "Seguridad",
+  {
+    name: "Seguridad",
     path: "/seguridadpage",
-    icon: <ShieldCheck size={20} /> 
+    icon: <ShieldCheck size={20} />,
   },
 ];

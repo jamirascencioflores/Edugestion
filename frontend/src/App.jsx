@@ -29,6 +29,8 @@ import SeguridadPage from "./pages/Director/Seguridad"; // Importación para Seg
 import Configuracion from "./pages/SuperAdmin/Configuracion"; // Importación para Configuración
 import ConfiguracionPage from "./pages/public/ConfiguracionPage";
 import ReporteMorosos from "./pages/Director/ReporteMorosos"; // Importación para Reporte de Morosos
+import FeatureGuard from "./components/FeatureGuard"; // Importación para FeatureGuard
+import AnunciosIndex from "./pages/Director/Anuncios"; // Importación para Anuncios del Director
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -325,6 +327,25 @@ function App() {
                   setDarkMode={setDarkMode}
                 >
                   <ReporteMorosos />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* COMUNICADOS / ANUNCIOS */}
+          <Route
+            path="/anuncios"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN_COLEGIO", "DOCENTE"]}>
+                <AdminLayout
+                  theme={theme}
+                  setTheme={setTheme}
+                  darkMode={darkMode}
+                  setDarkMode={setDarkMode}
+                >
+                  <FeatureGuard feature="permitePortalPadres">
+                    <AnunciosIndex />
+                  </FeatureGuard>
                 </AdminLayout>
               </ProtectedRoute>
             }

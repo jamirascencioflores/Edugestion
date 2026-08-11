@@ -53,7 +53,7 @@ spring:
         - id: comunicacion-route
           uri: lb://ms-comunicacion
           predicates:
-            - Path=/api/comunicacion/**
+            - Path=/api/comunicacion/**, /api/comunicaciones/**
           filters:
             - AuthenticationFilter # <--- Filtro agregado preventivamente
 
