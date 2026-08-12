@@ -55,13 +55,13 @@ export default function Sidebar({ isOpen, onClose }) {
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 md:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 lg:hidden"
         />
       )}
 
       <aside
         className={`w-64 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col fixed left-0 top-0 z-40 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* BRANDING + BOTÓN CERRAR MÓVIL */}
@@ -84,7 +84,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
           <button
             onClick={onClose}
-            className="md:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="lg:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           >
             <X size={20} />
           </button>

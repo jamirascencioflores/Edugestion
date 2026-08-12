@@ -12,7 +12,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import Docentes from "./pages/Director/GestionPersonal";
 import CambiarPassword from "./pages/shared/CambiarPassword";
 import GestionColegios from "./pages/SuperAdmin/GestionColegios";
-import Periodos from "./pages/Director/GestionAcademica/Periodos/Periodos";
+import Periodos from "./pages/Director/GestionAcademica/Periodos/index";
 import GradosSecciones from "./pages/Director/GestionAcademica/GradosSecciones";
 import GestionCursos from "./pages/Director/GestionAcademica/Cursos";
 import MallaCurricular from "./pages/Director/GestionAcademica/MallaCurricular";

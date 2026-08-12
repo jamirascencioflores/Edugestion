@@ -95,13 +95,13 @@ export default function AdminLayout({
       />
 
       {/* Contenedor principal: ml-0 en móvil, ml-64 en desktop */}
-      <div className="flex-1 ml-0 md:ml-64 flex flex-col min-w-0">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+      <div className="flex-1 ml-0 lg:ml-64 flex flex-col min-w-0">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10">
           {/* Botón Hamburguesa (Móvil) + Buscador (Desktop) */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
               title="Abrir menú"
             >
               <Menu size={22} />
@@ -109,11 +109,11 @@ export default function AdminLayout({
 
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="relative w-full sm:w-80 md:w-96 flex items-center text-left bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-xs md:text-sm text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              className="relative w-full sm:w-80 lg:w-96 flex items-center text-left bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-xs lg:text-sm text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
             >
               <Search size={16} className="mr-2 text-slate-400 shrink-0" />
               <span className="truncate">Buscar accesos rápidos...</span>
-              <kbd className="absolute right-3 hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md">
+              <kbd className="absolute right-3 hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
                 {kbdText}
               </kbd>
             </button>
@@ -180,14 +180,14 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <main className="p-4 md:p-8 flex-1 overflow-auto text-slate-900 dark:text-slate-100">
+        <main className="p-4 lg:p-8 flex-1 overflow-auto text-slate-900 dark:text-slate-100">
           {children}
         </main>
       </div>
 
       {/* MODAL PALETA DE COMANDOS */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center pt-16 md:pt-20 p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center pt-16 lg:pt-20 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
               <Search size={20} className="text-slate-400 mr-2 shrink-0" />

@@ -1,3 +1,4 @@
+// src/pages/Director/GestionPersonal/ModalDocente.jsx
 import { useState } from "react";
 import { X, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -9,22 +10,38 @@ export default function ModalDocente({
   onSuccess,
   docenteEdit,
 }) {
-  // Inicialización perezosa para evitaruseEffect y linter warnings
-  const [formData, setFormData] = useState(() => ({
+  const [formData, setFormData] = useState({
     nombres: docenteEdit?.nombres || "",
     apellidos: docenteEdit?.apellidos || "",
     documentoIdentidad: docenteEdit?.documentoIdentidad || "",
     email: docenteEdit?.email || "",
     especialidad: docenteEdit?.especialidad || "",
-  }));
+  });
+
+  // Guardamos el ID previo para detectar el cambio de docente durante el render sin usar useEffect
+  const [prevDocenteId, setPrevDocenteId] = useState(docenteEdit?.id || null);
   const [loading, setLoading] = useState(false);
+
+  const currentDocenteId = docenteEdit?.id || null;
+
+  // Sincronización limpia en fase de render cuando cambia el docente seleccionado
+  if (currentDocenteId !== prevDocenteId) {
+    setPrevDocenteId(currentDocenteId);
+    setFormData({
+      nombres: docenteEdit?.nombres || "",
+      apellidos: docenteEdit?.apellidos || "",
+      documentoIdentidad: docenteEdit?.documentoIdentidad || "",
+      email: docenteEdit?.email || "",
+      especialidad: docenteEdit?.especialidad || "",
+    });
+  }
 
   if (!isOpen) return null;
 
   const isEditing = !!docenteEdit;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -33,7 +50,12 @@ export default function ModalDocente({
 
     try {
       if (isEditing) {
-        await api.put(`/auth/docentes/${docenteEdit.id}`, formData);
+        // 👈 Incluimos explícitamente el estado actual del docente para no resetearlo
+        const payload = {
+          ...formData,
+          estado: docenteEdit.estado,
+        };
+        await api.put(`/auth/docentes/${docenteEdit.id}`, payload);
         toast.success("Docente actualizado con éxito");
       } else {
         await api.post("/auth/docentes", formData);
@@ -55,7 +77,7 @@ export default function ModalDocente({
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
             {isEditing ? "Editar Docente" : "Registrar Nuevo Docente"}
@@ -69,7 +91,7 @@ export default function ModalDocente({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Nombres
@@ -98,7 +120,7 @@ export default function ModalDocente({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Documento (DNI/CE)

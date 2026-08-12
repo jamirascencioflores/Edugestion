@@ -14,9 +14,8 @@ export default function Docentes() {
   const [loading, setLoading] = useState(true);
   const [docenteEdit, setDocenteEdit] = useState(null);
 
-  // Estados de filtrado
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterEstado, setFilterEstado] = useState("TODOS"); // "TODOS" | "ACTIVOS" | "INACTIVOS"
+  const [filterEstado, setFilterEstado] = useState("TODOS");
 
   const fetchDocentes = async () => {
     try {
@@ -147,7 +146,6 @@ export default function Docentes() {
     }
   };
 
-  // Filtrado Lógico Combinado (Buscador + Pills)
   const filteredDocentes = docentes.filter((d) => {
     const matchesSearch =
       d.nombres?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,14 +162,14 @@ export default function Docentes() {
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Responsivo */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <Users style={{ color: "var(--color-primary)" }} /> Personal Docente
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Gestiona los profesores asignados a tu institución.
           </p>
         </div>
@@ -180,7 +178,7 @@ export default function Docentes() {
             setDocenteEdit(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 text-white px-4 py-2 rounded-lg font-semibold shadow-sm hover:opacity-90 transition-opacity text-sm"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:opacity-90 transition-opacity text-sm"
           style={{ backgroundColor: "var(--color-primary)" }}
         >
           <Plus size={18} />
@@ -190,7 +188,7 @@ export default function Docentes() {
 
       <KpiCards docentes={docentes} />
 
-      {/* Buscador + Filtro por Pills */}
+      {/* Buscador + Filtro Responsivo */}
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search
@@ -206,13 +204,12 @@ export default function Docentes() {
           />
         </div>
 
-        {/* Pills de Filtrado por Estado */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-xs font-semibold w-full md:w-auto justify-center">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-xs font-semibold w-full md:w-auto justify-between sm:justify-center">
           <button
             onClick={() => setFilterEstado("TODOS")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "TODOS"
-                ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
@@ -220,9 +217,9 @@ export default function Docentes() {
           </button>
           <button
             onClick={() => setFilterEstado("ACTIVOS")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "ACTIVOS"
-                ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
@@ -230,9 +227,9 @@ export default function Docentes() {
           </button>
           <button
             onClick={() => setFilterEstado("INACTIVOS")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "INACTIVOS"
-                ? "bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
@@ -241,9 +238,8 @@ export default function Docentes() {
         </div>
       </div>
 
-      {/* Tabla de Resultados */}
       {loading ? (
-        <div className="text-center py-10 text-slate-500">
+        <div className="text-center py-10 text-slate-500 text-sm font-medium">
           Cargando personal docente...
         </div>
       ) : (

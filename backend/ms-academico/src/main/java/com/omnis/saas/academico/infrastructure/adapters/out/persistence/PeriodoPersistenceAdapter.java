@@ -7,7 +7,9 @@ import com.omnis.saas.academico.infrastructure.adapters.out.persistence.mapper.P
 import com.omnis.saas.academico.infrastructure.adapters.out.persistence.repository.PeriodoJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,5 +56,15 @@ public class PeriodoPersistenceAdapter implements PeriodoRepositoryPort {
         repository.deleteById(id);
     }
 
+    @Override
+    @Transactional
+    public void cerrarPeriodosVencidos(LocalDate fecha) {
+        repository.cerrarPeriodosVencidos(fecha);
+    }
 
+    @Override
+    @Transactional
+    public void activarPeriodoActual(LocalDate fecha) {
+        repository.activarPeriodoActual(fecha);
+    }
 }

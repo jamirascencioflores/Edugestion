@@ -1,5 +1,4 @@
-//src/pages/Director/GestionAcademica/Estudiantes/index.jsx
-
+// src/pages/Director/GestionAcademica/Estudiantes/index.jsx
 import { useState, useEffect } from "react";
 import { Plus, GraduationCap, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +16,6 @@ export default function EstudiantesIndex() {
   const [estudianteEditando, setEstudianteEditando] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Filtros
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroGrado, setFiltroGrado] = useState("");
   const [filtroSeccion, setFiltroSeccion] = useState("");
@@ -78,7 +76,6 @@ export default function EstudiantesIndex() {
     setIsModalOpen(false);
   };
 
-  // Lógica de filtrado
   const estudiantesFiltrados = estudiantes
     .filter((est) => {
       const coincideTexto = `${est.nombres} ${est.apellidos} ${est.dni}`
@@ -109,45 +106,44 @@ export default function EstudiantesIndex() {
     .sort((a, b) => a.apellidos.localeCompare(b.apellidos));
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Responsivo */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <GraduationCap
               size={24}
               style={{ color: "var(--color-primary)" }}
             />
             <span>Gestión de Estudiantes</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Administra el registro y matrícula de los alumnos del colegio.
           </p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           style={{ backgroundColor: "var(--color-primary)" }}
-          className="text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:opacity-90 shadow-sm text-sm font-semibold"
+          className="w-full sm:w-auto text-white px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-xs text-sm font-semibold"
         >
           <Plus size={18} />
           <span>Nuevo Estudiante</span>
         </button>
       </div>
 
-      {/* KPI Cards (AQUÍ ESTÁ AGREGADO) */}
       <KpiCardsEstudiantes estudiantes={estudiantes} />
 
-      {/* Contenedor de Búsqueda + Filtros */}
+      {/* Buscador + Filtros Responsivos */}
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="relative col-span-1 sm:col-span-2 md:col-span-1">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               size={18}
             />
             <input
               type="text"
-              placeholder="Buscar estudiante por nombre o DNI..."
+              placeholder="Buscar por nombre o DNI..."
               value={filtroTexto}
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
               onChange={(e) => setFiltroTexto(e.target.value)}
@@ -155,7 +151,7 @@ export default function EstudiantesIndex() {
           </div>
 
           <select
-            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none text-sm"
+            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none text-sm"
             value={filtroGrado}
             onChange={(e) => {
               setFiltroGrado(e.target.value);
@@ -171,7 +167,7 @@ export default function EstudiantesIndex() {
           </select>
 
           <select
-            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none text-sm disabled:opacity-50"
+            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none text-sm disabled:opacity-50"
             value={filtroSeccion}
             disabled={!filtroGrado}
             onChange={(e) => setFiltroSeccion(e.target.value)}
@@ -188,12 +184,12 @@ export default function EstudiantesIndex() {
         </div>
 
         {/* Pills de Estado */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-xs font-semibold w-fit">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-xs font-semibold w-full sm:w-fit justify-between sm:justify-start">
           <button
             onClick={() => setFilterEstado("TODOS")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "TODOS"
-                ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
@@ -201,9 +197,9 @@ export default function EstudiantesIndex() {
           </button>
           <button
             onClick={() => setFilterEstado("MATRICULADOS")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "MATRICULADOS"
-                ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
@@ -211,13 +207,13 @@ export default function EstudiantesIndex() {
           </button>
           <button
             onClick={() => setFilterEstado("INACTIVOS")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "INACTIVOS"
-                ? "bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            Retirados/Inactivos ({estudiantes.filter((e) => !e.estado).length})
+            Retirados ({estudiantes.filter((e) => !e.estado).length})
           </button>
         </div>
       </div>
