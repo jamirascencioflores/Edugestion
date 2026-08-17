@@ -1,3 +1,4 @@
+// src/utils/excelGenerator.js
 import ExcelJS from "exceljs";
 
 /**
@@ -25,18 +26,18 @@ const generarExcel = async (
   headerRow.fill = {
     type: "pattern",
     pattern: "solid",
-    fgColor: { argb: "4F46E5" }, // Color Morado / Indigo primario
+    fgColor: { argb: "4F46E5" }, // Color Primario
   };
   headerRow.alignment = { vertical: "middle", horizontal: "center" };
-  headerRow.height = 25;
+  headerRow.height = 26;
 
-  // 3. Agregar una fila de ejemplo / guía para el usuario
+  // 3. Fila de ejemplo / guía
   if (ejemploFila) {
     const rowEjemplo = worksheet.addRow(ejemploFila);
     rowEjemplo.font = { italic: true, color: { argb: "6B7280" } };
   }
 
-  // 4. Generar Buffer y descargar
+  // 4. Descarga
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -55,20 +56,24 @@ const generarExcel = async (
 // --- PLANTILLAS ESPECÍFICAS DE EDUGESTIÓN ---
 
 export const plantillaGenerators = {
-  // 1. MODO A: PLANILLA UNIFICADA (MAESTRO)
+  // 1. MODO A: PLANTILLA UNIFICADA (MAESTRO)
   descargarMaestro: () => {
     const columnas = [
-      { header: "Grado", key: "grado", width: 15 },
+      { header: "Grado", key: "grado", width: 16 },
       { header: "Sección", key: "seccion", width: 12 },
       { header: "Curso", key: "curso", width: 22 },
       { header: "DNI Docente", key: "dniDocente", width: 15 },
       { header: "Nombres Docente", key: "nombresDocente", width: 20 },
       { header: "Apellidos Docente", key: "apellidosDocente", width: 20 },
-      { header: "Email Docente", key: "emailDocente", width: 25 },
+      { header: "Email Docente", key: "emailDocente", width: 26 },
       { header: "DNI Alumno", key: "dniAlumno", width: 15 },
       { header: "Nombres Alumno", key: "nombresAlumno", width: 20 },
       { header: "Apellidos Alumno", key: "apellidosAlumno", width: 20 },
-      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 }, // 👈 Columna agregada
+      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 },
+      { header: "DNI Apoderado", key: "dniApoderado", width: 15 },
+      { header: "Nombres Apoderado", key: "nombresApoderado", width: 20 },
+      { header: "Apellidos Apoderado", key: "apellidosApoderado", width: 20 },
+      { header: "Teléfono Apoderado", key: "telefonoApoderado", width: 18 },
     ];
 
     const ejemplo = {
@@ -82,7 +87,11 @@ export const plantillaGenerators = {
       dniAlumno: "87654321",
       nombresAlumno: "Maria",
       apellidosAlumno: "López Silva",
-      fechaInscripcion: "15/02/2026", // 👈 Ejemplo agregado
+      fechaInscripcion: "15/02/2026",
+      dniApoderado: "09876543",
+      nombresApoderado: "Carlos",
+      apellidosApoderado: "López Mendoza",
+      telefonoApoderado: "987654321",
     };
 
     return generarExcel(
@@ -97,7 +106,7 @@ export const plantillaGenerators = {
   descargarEstructura: () => {
     const columnas = [
       { header: "Nivel", key: "nivel", width: 15 },
-      { header: "Grado", key: "grado", width: 15 },
+      { header: "Grado", key: "grado", width: 16 },
       { header: "Sección", key: "seccion", width: 12 },
       { header: "Curso", key: "curso", width: 22 },
     ];
@@ -143,16 +152,19 @@ export const plantillaGenerators = {
     );
   },
 
-  // 4. MODO B - PASO 3: ESTUDIANTES
+  // 4. MODO B - PASO 3: ESTUDIANTES Y APODERADOS
   descargarEstudiantes: () => {
     const columnas = [
       { header: "DNI Alumno", key: "dniAlumno", width: 15 },
       { header: "Nombres Alumno", key: "nombresAlumno", width: 22 },
       { header: "Apellidos Alumno", key: "apellidosAlumno", width: 22 },
-      { header: "Grado", key: "grado", width: 15 },
+      { header: "Grado", key: "grado", width: 16 },
       { header: "Sección", key: "seccion", width: 12 },
+      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 },
       { header: "DNI Apoderado", key: "dniApoderado", width: 15 },
-      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 }, // 👈 Columna agregada
+      { header: "Nombres Apoderado", key: "nombresApoderado", width: 22 },
+      { header: "Apellidos Apoderado", key: "apellidosApoderado", width: 22 },
+      { header: "Teléfono Apoderado", key: "telefonoApoderado", width: 18 },
     ];
 
     const ejemplo = {
@@ -161,8 +173,11 @@ export const plantillaGenerators = {
       apellidosAlumno: "López Silva",
       grado: "1° Secundaria",
       seccion: "A",
+      fechaInscripcion: "15/02/2026",
       dniApoderado: "09876543",
-      fechaInscripcion: "15/02/2026", // 👈 Ejemplo agregado
+      nombresApoderado: "Carlos",
+      apellidosApoderado: "López Mendoza",
+      telefonoApoderado: "987654321",
     };
 
     return generarExcel(

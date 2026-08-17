@@ -1,27 +1,98 @@
+// src/components/configuracion/GuiaColumnas.jsx
 export const GuiaColumnas = () => {
   const columnas = [
-    { label: "Grado", cat: "Estructura" },
-    { label: "Sección", cat: "Estructura" },
-    { label: "Curso", cat: "Estructura" },
-    { label: "DNI Docente", cat: "Docente" },
-    { label: "Nombres Docente", cat: "Docente" },
-    { label: "Apellidos Docente", cat: "Docente" },
-    { label: "Email Docente", cat: "Docente" },
-    { label: "DNI Alumno", cat: "Estudiante" },
-    { label: "Nombres Alumno", cat: "Estudiante" },
-    { label: "Apellidos Alumno", cat: "Estudiante" },
+    {
+      label: "Grado",
+      color:
+        "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    },
+    {
+      label: "Sección",
+      color:
+        "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    },
+    {
+      label: "Curso",
+      color:
+        "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    },
+    {
+      label: "DNI Docente",
+      color:
+        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    },
+    {
+      label: "Nombres Docente",
+      color:
+        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    },
+    {
+      label: "Apellidos Docente",
+      color:
+        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    },
+    {
+      label: "Email Docente",
+      color:
+        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    },
+    {
+      label: "DNI Alumno",
+      color:
+        "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    },
+    {
+      label: "Nombres Alumno",
+      color:
+        "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    },
+    {
+      label: "Apellidos Alumno",
+      color:
+        "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    },
+    {
+      label: "Fecha Inscripción",
+      color:
+        "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    },
+    {
+      label: "DNI Apoderado",
+      color:
+        "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    },
+    {
+      label: "Nombres Apoderado",
+      color:
+        "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    },
+    {
+      label: "Apellidos Apoderado",
+      color:
+        "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    },
+    {
+      label: "Teléfono Apoderado",
+      color:
+        "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    },
   ];
 
   return (
-    <div className="bg-slate-50/80 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-        Columnas Requeridas en la Fila 1
-      </p>
+    <div className="bg-slate-50/80 dark:bg-slate-900/50 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          Columnas Requeridas en la Fila 1
+        </p>
+        <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+          {columnas.length} columnas
+        </span>
+      </div>
       <div className="flex flex-wrap gap-1.5">
         {columnas.map((col, idx) => (
           <span
             key={idx}
-            className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm"
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${col.color}`}
           >
             {col.label}
           </span>

@@ -16,11 +16,23 @@ public class ReciboReporteController {
 
     @GetMapping("/recibo/{deudaId}")
     public ResponseEntity<byte[]> descargarRecibo(@PathVariable Long deudaId) {
-
         byte[] pdf = reciboReporteService.generarReciboPdf(deudaId);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recibo-" + deudaId + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/historial/{estudianteId}")
+    public ResponseEntity<byte[]> descargarHistorial(
+            @RequestHeader(value = "X-Colegio-Id", defaultValue = "1") Long colegioId,
+            @PathVariable Long estudianteId) {
+
+        byte[] pdf = reciboReporteService.generarHistorialCajaPdf(estudianteId, colegioId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=historial_caja_" + estudianteId + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }

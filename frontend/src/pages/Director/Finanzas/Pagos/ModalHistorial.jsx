@@ -9,11 +9,13 @@ import {
   Calendar,
   User,
 } from "lucide-react";
+import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
 
 const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [descargandoPdf, setDescargandoPdf] = useState(false);
   const [filtroTexto, setFiltroTexto] = useState("");
 
   useEffect(() => {
@@ -23,9 +25,17 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
       setLoading(true);
       try {
         const res = await api.get(`/finanzas/historial/${estudianteId}`);
-        setHistorial(res.data);
+        // Validar si la respuesta es un array o viene paginada en res.data.content
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.content)
+            ? res.data.content
+            : [];
+        setHistorial(data);
       } catch (err) {
         console.error("Error cargando historial", err);
+        toast.error("No se pudo cargar el historial de pagos.");
+        setHistorial([]);
       } finally {
         setLoading(false);
       }
@@ -36,25 +46,56 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
 
   if (!isOpen) return null;
 
-  const historialFiltrado = historial.filter((m) =>
-    (m.motivo || "").toLowerCase().includes(filtroTexto.toLowerCase()),
+  const handleDescargarHistorialPdf = async () => {
+    if (!estudianteId) return;
+    setDescargandoPdf(true);
+    try {
+      const response = await api.get(
+        `/finanzas/reportes/historial/${estudianteId}`,
+        {
+          responseType: "blob",
+        },
+      );
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `historial_caja_${estudianteId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Historial de caja descargado en PDF.");
+    } catch (error) {
+      console.error("Error al descargar el historial PDF:", error);
+      toast.error("No se pudo generar el historial en PDF.");
+    } finally {
+      setDescargandoPdf(false);
+    }
+  };
+
+  // Validación defensiva para evitar el error si historial no es un array
+  const listaHistorial = Array.isArray(historial) ? historial : [];
+  const historialFiltrado = listaHistorial.filter((m) =>
+    (m?.motivo || "").toLowerCase().includes(filtroTexto.toLowerCase()),
   );
 
   const resolverMonto = (mov) => {
     if (
-      mov.monto !== undefined &&
-      mov.monto !== null &&
+      mov?.monto !== undefined &&
+      mov?.monto !== null &&
       Number(mov.monto) > 0
     ) {
       return Number(mov.monto);
     }
-    if (mov.deudaId) {
+    if (mov?.deudaId && Array.isArray(deudas)) {
       const deudaEncontrada = deudas.find(
         (d) => String(d.id) === String(mov.deudaId),
       );
       if (deudaEncontrada) return Number(deudaEncontrada.monto);
     }
-    if (deudas.length > 0) {
+    if (Array.isArray(deudas) && deudas.length > 0) {
       const deudaconMonto = deudas.find((d) => Number(d.monto) > 0);
       if (deudaconMonto) return Number(deudaconMonto.monto);
     }
@@ -116,7 +157,7 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
             </div>
           ) : (
             <>
-              {/* VISTA MÓVIL (Cards) - Se activa en pantallas < lg */}
+              {/* VISTA MÓVIL (Cards) */}
               <div className="lg:hidden space-y-2.5">
                 {historialFiltrado.length === 0 ? (
                   <div className="py-10 text-center text-xs text-slate-400">
@@ -161,10 +202,15 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
                         <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
                           <span className="flex items-center gap-1">
                             <Calendar size={12} />
-                            {new Date(mov.fechaOperacion).toLocaleString([], {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })}
+                            {mov.fechaOperacion
+                              ? new Date(mov.fechaOperacion).toLocaleString(
+                                  [],
+                                  {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  },
+                                )
+                              : "-"}
                           </span>
                           <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-300">
                             <User size={12} />
@@ -177,7 +223,7 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
                 )}
               </div>
 
-              {/* VISTA DESKTOP (Tabla) - Se activa en pantallas >= lg */}
+              {/* VISTA DESKTOP (Tabla) */}
               <div className="hidden lg:block rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xs">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
@@ -210,7 +256,9 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
                             className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors"
                           >
                             <td className="px-4 py-3.5 font-medium text-slate-600 dark:text-slate-300 text-xs whitespace-nowrap">
-                              {new Date(mov.fechaOperacion).toLocaleString()}
+                              {mov.fechaOperacion
+                                ? new Date(mov.fechaOperacion).toLocaleString()
+                                : "-"}
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-2">
@@ -264,12 +312,19 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
         {/* Footer */}
         <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
           <button
-            onClick={() => window.print()}
+            onClick={handleDescargarHistorialPdf}
+            disabled={descargandoPdf || loading || listaHistorial.length === 0}
             style={{ backgroundColor: "var(--color-primary)" }}
-            className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-white rounded-xl flex items-center justify-center gap-2 hover:opacity-90 shadow-xs transition-all"
+            className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-white rounded-xl flex items-center justify-center gap-2 hover:opacity-90 shadow-xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Printer size={14} />
-            Imprimir Resumen
+            {descargandoPdf ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Printer size={14} />
+            )}
+            <span>
+              {descargandoPdf ? "Generando PDF..." : "Descargar Resumen"}
+            </span>
           </button>
         </div>
       </div>

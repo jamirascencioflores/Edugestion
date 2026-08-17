@@ -1,6 +1,7 @@
+// src/pages/Director/Seguridad/components/FormCambiarPassword.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Key, Eye, EyeOff } from "lucide-react";
+import { Key, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../../../context/AuthContext";
 import api from "../../../../api/axiosConfig";
@@ -36,7 +37,6 @@ export default function FormCambiarPassword() {
         "Contraseña actualizada correctamente. Por favor, inicia sesión de nuevo.",
       );
 
-      // Redirección y cierre de sesión seguro
       setTimeout(() => {
         logout();
         navigate("/login");
@@ -53,14 +53,20 @@ export default function FormCambiarPassword() {
   };
 
   return (
-    <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
-        <Key size={18} style={{ color: "var(--color-primary)" }} /> Cambiar
-        Contraseña
-      </h3>
+    <div className="xl:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+      <div className="border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <Key size={18} style={{ color: "var(--color-primary)" }} />
+          <span>Cambiar Contraseña</span>
+        </h3>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Te recomendamos utilizar al menos 8 caracteres con números y símbolos.
+        </p>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
             Contraseña Actual
           </label>
           <div className="relative">
@@ -70,21 +76,22 @@ export default function FormCambiarPassword() {
               value={form.actual}
               onChange={handleChange}
               required
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 pr-10 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1"
+              placeholder="Ingresa tu contraseña actual"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Nueva Contraseña
             </label>
             <input
@@ -94,12 +101,12 @@ export default function FormCambiarPassword() {
               onChange={handleChange}
               required
               placeholder="Mínimo 8 caracteres"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Confirmar Nueva Contraseña
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Confirmar Contraseña
             </label>
             <input
               type={showPassword ? "text" : "password"}
@@ -107,7 +114,8 @@ export default function FormCambiarPassword() {
               value={form.confirmacion}
               onChange={handleChange}
               required
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1"
+              placeholder="Repite la nueva contraseña"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
             />
           </div>
         </div>
@@ -116,10 +124,11 @@ export default function FormCambiarPassword() {
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all shadow-sm hover:opacity-90 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-xs hover:opacity-90 active:scale-95 disabled:opacity-50"
             style={{ backgroundColor: "var(--color-primary)" }}
           >
-            {loading ? "Actualizando..." : "Actualizar Contraseña"}
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            <span>{loading ? "Actualizando..." : "Actualizar Contraseña"}</span>
           </button>
         </div>
       </form>

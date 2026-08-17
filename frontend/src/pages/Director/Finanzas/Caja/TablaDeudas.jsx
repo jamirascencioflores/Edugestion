@@ -91,7 +91,7 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
     const isPagada = d.estado === "PAGADA";
     return (
       <span
-        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
           isPagada
             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60"
             : estaVencida
@@ -120,8 +120,8 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
           {titulo}
         </h3>
 
-        {/* VISTA MÓVIL (Cards) - Se activa en pantallas < lg */}
-        <div className="lg:hidden space-y-2.5">
+        {/* VISTA MÓVIL / ZOOM (Cards) - Activa en < xl */}
+        <div className="xl:hidden space-y-2.5">
           {lista.map((d) => {
             const estaVencida = esVencida(d);
             const conceptoNombre = d.concepto
@@ -201,16 +201,20 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
           })}
         </div>
 
-        {/* VISTA DESKTOP (Tabla tradicional) - Se activa en pantallas >= lg */}
-        <div className="hidden lg:block overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
+        {/* VISTA DESKTOP (Tabla con anchos y nowrap) - Activa en >= xl */}
+        <div className="hidden xl:block overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
               <tr>
-                <th className="px-5 py-3.5">Concepto</th>
-                <th className="px-5 py-3.5">Monto</th>
-                <th className="px-5 py-3.5">Vencimiento</th>
-                <th className="px-5 py-3.5 text-center">Estado</th>
-                <th className="px-5 py-3.5 text-right">Acción</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Concepto</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Monto</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Vencimiento</th>
+                <th className="px-5 py-3.5 text-center whitespace-nowrap">
+                  Estado
+                </th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap">
+                  Acción
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -222,7 +226,7 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                     key={d.id}
                     className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors"
                   >
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 whitespace-nowrap">
                       <p className="font-bold text-slate-800 dark:text-slate-100">
                         {d.concepto
                           ? d.concepto
@@ -235,7 +239,7 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                       )}
                     </td>
 
-                    <td className="px-5 py-4 font-bold text-slate-900 dark:text-white font-mono">
+                    <td className="px-5 py-4 font-bold text-slate-900 dark:text-white font-mono whitespace-nowrap">
                       <span
                         className={
                           estaVencida ? "text-red-600 dark:text-red-400" : ""
@@ -245,15 +249,15 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                       </span>
                     </td>
 
-                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">
                       {formatearFecha(d.fechaVencimiento)}
                     </td>
 
-                    <td className="px-5 py-4 text-center">
+                    <td className="px-5 py-4 text-center whitespace-nowrap">
                       {renderBadgeEstado(d, estaVencida)}
                     </td>
 
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-5 py-4 text-right whitespace-nowrap">
                       {d.estado !== "PAGADA" && (
                         <button
                           onClick={() => onPagar(d)}

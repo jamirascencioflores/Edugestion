@@ -1,3 +1,4 @@
+// src/components/configuracion/DropzoneExcel.jsx
 import {
   FileSpreadsheet,
   UploadCloud,
@@ -7,9 +8,9 @@ import {
 
 export const DropzoneExcel = ({ archivo, setArchivo, onSubmit, cargando }) => {
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
       <div
-        className="border-2 border-dashed bg-slate-50/50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl p-8 text-center transition-all cursor-pointer relative"
+        className="border-2 border-dashed bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-2xl p-6 sm:p-8 text-center transition-all cursor-pointer relative"
         style={{ borderColor: "var(--color-primary)" }}
       >
         <input
@@ -25,20 +26,20 @@ export const DropzoneExcel = ({ archivo, setArchivo, onSubmit, cargando }) => {
         >
           {archivo ? (
             <CheckCircle2
-              className="w-12 h-12 mb-2 animate-bounce"
+              className="w-10 h-10 sm:w-12 sm:h-12 mb-2 animate-bounce"
               style={{ color: "var(--color-primary)" }}
             />
           ) : (
             <UploadCloud
-              className="w-12 h-12 mb-2"
+              className="w-10 h-10 sm:w-12 sm:h-12 mb-2"
               style={{ color: "var(--color-primary)" }}
             />
           )}
-          <span className="text-slate-800 dark:text-slate-200 font-semibold text-base">
+          <span className="text-slate-800 dark:text-slate-200 font-bold text-sm sm:text-base break-all px-2">
             {archivo ? archivo.name : "Selecciona o arrastra tu archivo Excel"}
           </span>
           <span className="text-slate-400 text-xs mt-1">
-            Soporta formato .xlsx
+            Solo archivos en formato .xlsx
           </span>
         </label>
       </div>
@@ -47,18 +48,18 @@ export const DropzoneExcel = ({ archivo, setArchivo, onSubmit, cargando }) => {
         <button
           type="submit"
           disabled={cargando}
-          className="w-full text-white py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-90 disabled:opacity-50"
+          className="w-full text-white py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
           style={{ backgroundColor: "var(--color-primary)" }}
         >
           {cargando ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Procesando data...
+              <span>Procesando archivo...</span>
             </>
           ) : (
             <>
               <FileSpreadsheet className="w-4 h-4" />
-              Importar Información
+              <span>Importar Información</span>
             </>
           )}
         </button>
