@@ -1,3 +1,4 @@
+// src/pages/Director/GestionAcademica/Cursos/TablaCursos.jsx
 import {
   Edit,
   Trash2,
@@ -22,9 +23,8 @@ function IconoMateria({ nombre = "", activo = true }) {
 
   let Icon = BookOpen;
   let bgClass =
-    "bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300"; // Fallback: Comunicación / Letras
+    "bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300";
 
-  // 1. Tecnología y Computación
   if (
     nameLower.includes("computaci") ||
     nameLower.includes("informátic") ||
@@ -36,9 +36,7 @@ function IconoMateria({ nombre = "", activo = true }) {
     Icon = Laptop;
     bgClass =
       "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300";
-  }
-  // 2. Números y Ciencias Exactas
-  else if (
+  } else if (
     nameLower.includes("matemátic") ||
     nameLower.includes("matemat") ||
     nameLower.includes("álgebra") ||
@@ -51,9 +49,7 @@ function IconoMateria({ nombre = "", activo = true }) {
     Icon = Calculator;
     bgClass =
       "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300";
-  }
-  // 3. Ciencias Naturales
-  else if (
+  } else if (
     nameLower.includes("cienci") ||
     nameLower.includes("químic") ||
     nameLower.includes("biolog") ||
@@ -64,9 +60,7 @@ function IconoMateria({ nombre = "", activo = true }) {
     Icon = FlaskConical;
     bgClass =
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400";
-  }
-  // 4. Historia, Cívica y Ciencias Sociales
-  else if (
+  } else if (
     nameLower.includes("historia") ||
     nameLower.includes("geograf") ||
     nameLower.includes("social") ||
@@ -79,9 +73,7 @@ function IconoMateria({ nombre = "", activo = true }) {
     Icon = Globe;
     bgClass =
       "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400";
-  }
-  // 5. Idiomas
-  else if (
+  } else if (
     nameLower.includes("inglés") ||
     nameLower.includes("ingles") ||
     nameLower.includes("idiom") ||
@@ -90,9 +82,7 @@ function IconoMateria({ nombre = "", activo = true }) {
   ) {
     Icon = Languages;
     bgClass = "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300";
-  }
-  // 6. Arte, Danza y Teatro
-  else if (
+  } else if (
     nameLower.includes("arte") ||
     nameLower.includes("dibujo") ||
     nameLower.includes("plástic") ||
@@ -102,15 +92,11 @@ function IconoMateria({ nombre = "", activo = true }) {
     Icon = Palette;
     bgClass =
       "bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300";
-  }
-  // 7. Música
-  else if (nameLower.includes("músic")) {
+  } else if (nameLower.includes("músic")) {
     Icon = Music;
     bgClass =
       "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300";
-  }
-  // 8. Educación Física
-  else if (
+  } else if (
     nameLower.includes("físic") ||
     nameLower.includes("deport") ||
     nameLower.includes("psicomotric")
@@ -118,9 +104,7 @@ function IconoMateria({ nombre = "", activo = true }) {
     Icon = Activity;
     bgClass =
       "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300";
-  }
-  // 9. Religión, Tutoría y Valores
-  else if (
+  } else if (
     nameLower.includes("religi") ||
     nameLower.includes("tutor") ||
     nameLower.includes("valores") ||
@@ -131,7 +115,6 @@ function IconoMateria({ nombre = "", activo = true }) {
       "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300";
   }
 
-  // Estado inactivo
   if (!activo) {
     bgClass =
       "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400";
@@ -139,7 +122,7 @@ function IconoMateria({ nombre = "", activo = true }) {
 
   return (
     <div
-      className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-200/50 dark:border-slate-700 ${bgClass}`}
+      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-slate-700 ${bgClass}`}
     >
       <Icon size={18} />
     </div>
@@ -205,30 +188,107 @@ export default function TablaCursos({ cursos, onRefresh, onEdit }) {
     }
   };
 
+  if (cursos.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
+        No hay cursos que coincidan con la búsqueda.
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
-            <tr>
-              <th className="px-6 py-4">Curso</th>
-              <th className="px-6 py-4">Descripción</th>
-              <th className="px-6 py-4">Estado</th>
-              <th className="px-6 py-4 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {cursos.length === 0 ? (
-              <tr>
-                <td
-                  colSpan="4"
-                  className="px-6 py-12 text-center text-slate-400 dark:text-slate-500"
+    <>
+      {/* VISTA MÓVIL (Cards) - Se activa en pantallas < lg */}
+      <div className="lg:hidden space-y-3">
+        {cursos.map((c) => (
+          <div
+            key={c.id}
+            className={`bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3 transition-opacity ${
+              !c.estado ? "opacity-75 bg-slate-50/40 dark:bg-slate-900/20" : ""
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <IconoMateria nombre={c.nombre} activo={c.estado} />
+                <div className="min-w-0">
+                  <p
+                    className={`font-bold text-sm truncate ${
+                      c.estado
+                        ? "text-slate-800 dark:text-slate-100"
+                        : "text-slate-500 dark:text-slate-400 line-through"
+                    }`}
+                  >
+                    {c.nombre}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
+                    {c.descripcion || "Sin descripción"}
+                  </p>
+                </div>
+              </div>
+
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${
+                  c.estado
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    c.estado ? "bg-emerald-500" : "bg-red-500"
+                  }`}
+                />
+                {c.estado ? "Activo" : "Inactivo"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+              <button
+                onClick={() => onEdit(c)}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400 rounded-lg transition-colors"
+              >
+                <Edit size={14} /> Editar
+              </button>
+
+              <button
+                onClick={() => handleCambiarEstado(c)}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  c.estado
+                    ? "text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400"
+                    : "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400"
+                }`}
+              >
+                <Power size={14} /> {c.estado ? "Desactivar" : "Activar"}
+              </button>
+
+              {!c.estado && (
+                <button
+                  onClick={() => handleEliminar(c)}
+                  className="p-1.5 text-red-600 bg-red-50 dark:bg-red-950/40 dark:text-red-400 rounded-lg transition-colors"
+                  title="Eliminar Definitivamente"
                 >
-                  No hay cursos que coincidan con la búsqueda.
-                </td>
+                  <Trash2 size={15} />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* VISTA DESKTOP (Tabla tradicional) - Se activa en pantallas >= lg */}
+      <div className="hidden lg:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
+              <tr>
+                <th className="px-6 py-4">Curso</th>
+                <th className="px-6 py-4">Descripción</th>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
-            ) : (
-              cursos.map((c) => (
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {cursos.map((c) => (
                 <tr
                   key={c.id}
                   className={`transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/60 ${
@@ -279,7 +339,7 @@ export default function TablaCursos({ cursos, onRefresh, onEdit }) {
                     <div className="flex justify-center items-center gap-1">
                       <button
                         onClick={() => onEdit(c)}
-                        className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition-colors"
+                        className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
                         title="Editar Curso"
                       >
                         <Edit size={16} />
@@ -287,7 +347,7 @@ export default function TablaCursos({ cursos, onRefresh, onEdit }) {
 
                       <button
                         onClick={() => handleCambiarEstado(c)}
-                        className={`p-1.5 rounded-md transition-colors ${
+                        className={`p-1.5 rounded-lg transition-colors ${
                           c.estado
                             ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40"
                             : "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
@@ -300,7 +360,7 @@ export default function TablaCursos({ cursos, onRefresh, onEdit }) {
                       {!c.estado && (
                         <button
                           onClick={() => handleEliminar(c)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors"
+                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
                           title="Eliminar Definitivamente"
                         >
                           <Trash2 size={16} />
@@ -309,11 +369,11 @@ export default function TablaCursos({ cursos, onRefresh, onEdit }) {
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

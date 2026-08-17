@@ -1,17 +1,18 @@
+// src/pages/Director/ReporteMorosos/index.jsx
 import { useState, useEffect, useMemo } from "react";
-import { AlertTriangle, Download, ArrowLeft, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { AlertTriangle, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig";
+import { generarExcelMorosidad } from "../../../utils/exportarMorososExcel";
 
 import KpiCardsMorosidad from "./KpiCardsMorosidad";
 import FiltrosMorosidad from "./FiltrosMorosidad";
 import TablaMorosos from "./TablaMorosos";
 
 export default function ReporteMorososIndex() {
-  const navigate = useNavigate();
   const [morosos, setMorosos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exportando, setExportando] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filtroGrado, setFiltroGrado] = useState("TODOS");
 
@@ -80,14 +81,12 @@ export default function ReporteMorososIndex() {
     fetchMorosos();
   }, []);
 
-  // Lista única de grados para el select de filtro
   const opcionesGrados = useMemo(() => {
     return Array.from(new Set(morosos.map((m) => m.gradoSeccion))).filter(
       (g) => g !== "Sin asignar",
     );
   }, [morosos]);
 
-  // Filtrado
   const morososFiltrados = useMemo(() => {
     return morosos.filter((m) => {
       const coincideTexto =
@@ -107,11 +106,23 @@ export default function ReporteMorososIndex() {
     );
   }, [morososFiltrados]);
 
+  const handleDescargarExcel = async () => {
+    try {
+      setExportando(true);
+      await generarExcelMorosidad(morososFiltrados);
+      toast.success("Excel generado con éxito con pestañas por aula.");
+    } catch (err) {
+      toast.error(err.message || "Error al generar el archivo Excel.");
+    } finally {
+      setExportando(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3">
         <Loader2 className="w-8 h-8 animate-spin text-rose-600" />
-        <p className="text-sm font-medium text-slate-500">
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
           Generando reporte de morosidad...
         </p>
       </div>
@@ -119,37 +130,35 @@ export default function ReporteMorososIndex() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Responsivo */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-all shadow-sm"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <AlertTriangle className="text-rose-500" size={24} />
-              Control de Morosidad
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Gestión de cuentas por cobrar y recordatorios de pago.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <AlertTriangle className="text-rose-500" size={24} />
+            <span>Control de Morosidad</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Gestión de cuentas por cobrar y recordatorios de pago.
+          </p>
         </div>
 
         <button
-          onClick={() =>
-            toast.success("Exportando lista de morosos a Excel...")
-          }
-          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all"
+          onClick={handleDescargarExcel}
+          disabled={exportando || morososFiltrados.length === 0}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Download size={16} /> Exportar Excel
+          {exportando ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Download size={16} />
+          )}
+          <span>Exportar Excel (Por Aulas)</span>
         </button>
       </div>
 
       <KpiCardsMorosidad
+        morosos={morososFiltrados}
         totalMorosos={morososFiltrados.length}
         totalDeudaGlobal={totalDeudaGlobal}
       />

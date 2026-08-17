@@ -1,3 +1,4 @@
+// src/pages/Director/Finanzas/Caja/TablaDeudas.jsx
 import {
   CheckCircle,
   Clock,
@@ -60,6 +61,16 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
     return fechaVenc < hoy;
   };
 
+  const formatearFecha = (fechaVencimiento) => {
+    if (!fechaVencimiento) return "N/A";
+    if (Array.isArray(fechaVencimiento)) {
+      return `${fechaVencimiento[2].toString().padStart(2, "0")}/${fechaVencimiento[1]
+        .toString()
+        .padStart(2, "0")}/${fechaVencimiento[0]}`;
+    }
+    return new Date(fechaVencimiento + "T00:00:00").toLocaleDateString();
+  };
+
   const deudasOrdenadas = [...deudas].sort(
     (a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento),
   );
@@ -76,15 +87,122 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
       !d.concepto?.toLowerCase().includes("matricula"),
   );
 
-  const renderTabla = (lista, titulo) => {
+  const renderBadgeEstado = (d, estaVencida) => {
+    const isPagada = d.estado === "PAGADA";
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+          isPagada
+            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60"
+            : estaVencida
+              ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200/60 dark:border-red-800/60"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60"
+        }`}
+      >
+        {isPagada ? (
+          <CheckCircle size={12} />
+        ) : estaVencida ? (
+          <AlertTriangle size={12} />
+        ) : (
+          <Clock size={12} />
+        )}
+        {isPagada ? "PAGADA" : estaVencida ? "VENCIDA" : "PENDIENTE"}
+      </span>
+    );
+  };
+
+  const renderBloque = (lista, titulo) => {
     if (lista.length === 0) return null;
 
     return (
-      <div className="mb-6 last:mb-0">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider">
+      <div className="mb-6 last:mb-0 space-y-3">
+        <h3 className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
           {titulo}
         </h3>
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+
+        {/* VISTA MÓVIL (Cards) - Se activa en pantallas < lg */}
+        <div className="lg:hidden space-y-2.5">
+          {lista.map((d) => {
+            const estaVencida = esVencida(d);
+            const conceptoNombre = d.concepto
+              ? d.concepto
+              : `Pensión ${getNombreMes(d)} ${d.anioEscolar}`;
+
+            return (
+              <div
+                key={d.id}
+                className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
+                      {conceptoNombre}
+                    </h4>
+                    {d.numeroOperacion && (
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">
+                        Op: {d.numeroOperacion}
+                      </p>
+                    )}
+                  </div>
+                  {renderBadgeEstado(d, estaVencida)}
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">
+                      Vencimiento:
+                    </span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {formatearFecha(d.fechaVencimiento)}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-slate-400 block text-[11px]">
+                      Monto:
+                    </span>
+                    <span
+                      className={`text-base font-bold font-mono ${
+                        estaVencida
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-slate-900 dark:text-white"
+                      }`}
+                    >
+                      S/ {Number(d.monto).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                  {d.estado !== "PAGADA" ? (
+                    <button
+                      onClick={() => onPagar(d)}
+                      style={{ backgroundColor: "var(--color-primary)" }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:opacity-90 active:scale-95"
+                    >
+                      <Banknote size={15} />
+                      Cobrar Pensión
+                    </button>
+                  ) : (
+                    <div className="flex items-center justify-end gap-2 w-full">
+                      <BotonDescargaRecibo deudaId={d.id} />
+                      <button
+                        onClick={() => onRevertir(d)}
+                        className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-xl transition-all shadow-xs active:scale-95"
+                        title="Revertir Pago"
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* VISTA DESKTOP (Tabla tradicional) - Se activa en pantallas >= lg */}
+        <div className="hidden lg:block overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
               <tr>
@@ -104,7 +222,6 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                     key={d.id}
                     className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors"
                   >
-                    {/* Concepto */}
                     <td className="px-5 py-4">
                       <p className="font-bold text-slate-800 dark:text-slate-100">
                         {d.concepto
@@ -118,8 +235,7 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                       )}
                     </td>
 
-                    {/* Monto */}
-                    <td className="px-5 py-4 font-bold text-slate-900 dark:text-white">
+                    <td className="px-5 py-4 font-bold text-slate-900 dark:text-white font-mono">
                       <span
                         className={
                           estaVencida ? "text-red-600 dark:text-red-400" : ""
@@ -129,48 +245,20 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                       </span>
                     </td>
 
-                    {/* Vencimiento */}
                     <td className="px-5 py-4 text-slate-600 dark:text-slate-400 text-xs font-semibold">
-                      {Array.isArray(d.fechaVencimiento)
-                        ? `${d.fechaVencimiento[2].toString().padStart(2, "0")}/${d.fechaVencimiento[1].toString().padStart(2, "0")}/${d.fechaVencimiento[0]}`
-                        : new Date(
-                            d.fechaVencimiento + "T00:00:00",
-                          ).toLocaleDateString()}
+                      {formatearFecha(d.fechaVencimiento)}
                     </td>
 
-                    {/* Estado */}
                     <td className="px-5 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                          d.estado === "PAGADA"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60"
-                            : estaVencida
-                              ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200/60 dark:border-red-800/60"
-                              : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60"
-                        }`}
-                      >
-                        {d.estado === "PAGADA" ? (
-                          <CheckCircle size={12} />
-                        ) : estaVencida ? (
-                          <AlertTriangle size={12} />
-                        ) : (
-                          <Clock size={12} />
-                        )}
-                        {d.estado === "PAGADA"
-                          ? "PAGADA"
-                          : estaVencida
-                            ? "VENCIDA"
-                            : "PENDIENTE"}
-                      </span>
+                      {renderBadgeEstado(d, estaVencida)}
                     </td>
 
-                    {/* Acción */}
                     <td className="px-5 py-4 text-right">
                       {d.estado !== "PAGADA" && (
                         <button
                           onClick={() => onPagar(d)}
                           style={{ backgroundColor: "var(--color-primary)" }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:opacity-90 active:scale-95"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:opacity-90 active:scale-95"
                         >
                           <Banknote size={14} />
                           Cobrar
@@ -182,7 +270,7 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
                           <BotonDescargaRecibo deudaId={d.id} />
                           <button
                             onClick={() => onRevertir(d)}
-                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-lg transition-all shadow-sm active:scale-95"
+                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-lg transition-all shadow-xs active:scale-95"
                             title="Revertir Pago"
                           >
                             <RotateCcw size={16} />
@@ -202,8 +290,8 @@ export default function TablaDeudas({ deudas, onPagar, onRevertir }) {
 
   return (
     <div className="space-y-4">
-      {renderTabla(matriculas, "Matrícula")}
-      {renderTabla(pensiones, "Pensiones Mensuales")}
+      {renderBloque(matriculas, "Matrícula")}
+      {renderBloque(pensiones, "Pensiones Mensuales")}
     </div>
   );
 }

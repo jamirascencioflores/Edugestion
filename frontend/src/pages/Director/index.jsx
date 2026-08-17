@@ -1,3 +1,4 @@
+// src/pages/Director/index.jsx
 import { useState, useEffect } from "react";
 import {
   GraduationCap,
@@ -18,11 +19,13 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
+import { generarExcelDashboard } from "../../utils/exportarDashboardExcel";
 
 export default function DashboardDirector() {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,6 +55,18 @@ export default function DashboardDirector() {
     };
   }, []);
 
+  const handleDescargarReporte = async () => {
+    try {
+      setExportando(true);
+      await generarExcelDashboard(metrics);
+      toast.success("Reporte ejecutivo descargado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al generar el reporte.");
+    } finally {
+      setExportando(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3">
@@ -78,30 +93,35 @@ export default function DashboardDirector() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* 1. ENCABEZADO DE PÁGINA */}
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto p-4 sm:p-0">
+      {/* 1. ENCABEZADO */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100">
             Panel del Director
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Resumen operativo, académico y financiero en tiempo real.
           </p>
         </div>
 
         <button
-          onClick={() => toast.success("Generando reporte ejecutivo en PDF...")}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-xl shadow-sm transition-all"
+          onClick={handleDescargarReporte}
+          disabled={exportando || !metrics}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
         >
-          <Download size={16} /> Descargar Reporte General
+          {exportando ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Download size={16} />
+          )}
+          <span>Descargar Reporte General</span>
         </button>
       </div>
 
-      {/* 2. FILA DE TARJETAS KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* KPI 1: Estudiantes (Real de BD) */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+      {/* 2. TARJETAS KPI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
               <GraduationCap size={22} />
@@ -114,7 +134,7 @@ export default function DashboardDirector() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Total Estudiantes
             </p>
-            <p className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1 font-mono">
               {data.totalEstudiantes}
             </p>
           </div>
@@ -124,8 +144,7 @@ export default function DashboardDirector() {
           </p>
         </div>
 
-        {/* KPI 2: Docentes (Real de BD) */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <Users size={22} />
@@ -138,7 +157,7 @@ export default function DashboardDirector() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Personal Docente
             </p>
-            <p className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1 font-mono">
               {data.totalDocentes}
             </p>
           </div>
@@ -150,8 +169,7 @@ export default function DashboardDirector() {
           </p>
         </div>
 
-        {/* KPI 3: Recaudo del Mes */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl">
               <Wallet size={22} />
@@ -164,7 +182,7 @@ export default function DashboardDirector() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Recaudo del Mes
             </p>
-            <p className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1 font-mono">
               S/{" "}
               {data.recaudoMesActual?.toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
@@ -187,10 +205,9 @@ export default function DashboardDirector() {
           </div>
         </div>
 
-        {/* KPI 4: Morosidad */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl">
+            <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
               <AlertTriangle size={22} />
             </div>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-800">
@@ -201,7 +218,7 @@ export default function DashboardDirector() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Morosidad Actual
             </p>
-            <p className="text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">
+            <p className="text-2xl sm:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 font-mono">
               {data.porcentajeMorosidad}%
             </p>
           </div>
@@ -214,7 +231,7 @@ export default function DashboardDirector() {
 
       {/* 3. SECCIÓN CENTRAL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
             <div>
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
@@ -229,11 +246,11 @@ export default function DashboardDirector() {
             </button>
           </div>
 
-          <div className="h-64 flex items-end justify-between gap-6 px-4 pt-6 border-b border-slate-100 dark:border-slate-700">
+          <div className="h-64 flex items-end justify-between gap-3 sm:gap-6 px-2 sm:px-4 pt-6 border-b border-slate-100 dark:border-slate-700 overflow-x-auto">
             {data.recaudacionMensual?.map((d) => (
               <div
                 key={d.mes}
-                className="flex-1 flex flex-col items-center gap-2 h-full justify-end group"
+                className="flex-1 min-w-[36px] flex flex-col items-center gap-2 h-full justify-end group"
               >
                 <div className="w-full max-w-[48px] h-full flex flex-col justify-end bg-slate-50 dark:bg-slate-900/50 rounded-xl overflow-hidden p-1 gap-1">
                   <div
@@ -247,7 +264,7 @@ export default function DashboardDirector() {
                     title={`Recaudado: ${d.recaudado}%`}
                   />
                 </div>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {d.mes}
                 </span>
               </div>
@@ -270,9 +287,9 @@ export default function DashboardDirector() {
           </div>
         </div>
 
-        {/* Lado Derecho */}
+        {/* ACCIONES RÁPIDAS */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-700 pb-3">
               Acciones Rápidas
             </h3>
@@ -280,9 +297,9 @@ export default function DashboardDirector() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => navigate("/estudiantes")}
-                className="p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-all text-center space-y-2 group"
+                className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-all text-center space-y-2 group"
               >
-                <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                   <UserPlus size={18} />
                 </div>
                 <span className="block text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -292,9 +309,9 @@ export default function DashboardDirector() {
 
               <button
                 onClick={() => navigate("/caja")}
-                className="p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-all text-center space-y-2 group"
+                className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-all text-center space-y-2 group"
               >
-                <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                   <CreditCard size={18} />
                 </div>
                 <span className="block text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -304,9 +321,9 @@ export default function DashboardDirector() {
 
               <button
                 onClick={() => navigate("/anuncios")}
-                className="p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-all text-center space-y-2 group"
+                className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-all text-center space-y-2 group"
               >
-                <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                   <Megaphone size={18} />
                 </div>
                 <span className="block text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -316,9 +333,9 @@ export default function DashboardDirector() {
 
               <button
                 onClick={() => navigate("/reporte-morosos")}
-                className="p-4 bg-rose-50/50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-xl border border-rose-100 dark:border-rose-900/40 transition-all text-center space-y-2 group"
+                className="p-3 sm:p-4 bg-rose-50/50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-xl border border-rose-100 dark:border-rose-900/40 transition-all text-center space-y-2 group"
               >
-                <div className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                   <FileText size={18} />
                 </div>
                 <span className="block text-xs font-bold text-rose-700 dark:text-rose-300">
@@ -329,7 +346,7 @@ export default function DashboardDirector() {
           </div>
 
           {data.alertas?.contratosPorVencer > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-5 rounded-2xl space-y-3 animate-in fade-in duration-300">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 sm:p-5 rounded-2xl space-y-2 animate-in fade-in duration-300">
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-sm">
                 <AlertTriangle size={18} className="text-amber-600" />
                 <span>Atención Requerida</span>
