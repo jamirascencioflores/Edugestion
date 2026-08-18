@@ -13,11 +13,12 @@ const generarExcel = async (
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet(nombreHoja);
 
-  // 1. Configurar Cabeceras
+  // 1. Configurar Cabeceras con formato texto ('@') por defecto para evitar truncado de ceros
   worksheet.columns = columnas.map((col) => ({
     header: col.header,
     key: col.key,
     width: col.width || 20,
+    style: { numFmt: "@" }, // Fuerza a Excel a interpretar todas las celdas como Texto
   }));
 
   // 2. Estilar la fila de cabecera (Fila 1)
@@ -53,69 +54,23 @@ const generarExcel = async (
   window.URL.revokeObjectURL(url);
 };
 
-// --- PLANTILLAS ESPECÍFICAS DE EDUGESTIÓN ---
+// --- PLANTILLAS MODULARES POR PASOS ---
 
 export const plantillaGenerators = {
-  // 1. MODO A: PLANTILLA UNIFICADA (MAESTRO)
-  descargarMaestro: () => {
-    const columnas = [
-      { header: "Grado", key: "grado", width: 16 },
-      { header: "Sección", key: "seccion", width: 12 },
-      { header: "Curso", key: "curso", width: 22 },
-      { header: "DNI Docente", key: "dniDocente", width: 15 },
-      { header: "Nombres Docente", key: "nombresDocente", width: 20 },
-      { header: "Apellidos Docente", key: "apellidosDocente", width: 20 },
-      { header: "Email Docente", key: "emailDocente", width: 26 },
-      { header: "DNI Alumno", key: "dniAlumno", width: 15 },
-      { header: "Nombres Alumno", key: "nombresAlumno", width: 20 },
-      { header: "Apellidos Alumno", key: "apellidosAlumno", width: 20 },
-      { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 },
-      { header: "DNI Apoderado", key: "dniApoderado", width: 15 },
-      { header: "Nombres Apoderado", key: "nombresApoderado", width: 20 },
-      { header: "Apellidos Apoderado", key: "apellidosApoderado", width: 20 },
-      { header: "Teléfono Apoderado", key: "telefonoApoderado", width: 18 },
-    ];
-
-    const ejemplo = {
-      grado: "1° Secundaria",
-      seccion: "A",
-      curso: "Matemáticas",
-      dniDocente: "12345678",
-      nombresDocente: "Juan Carlos",
-      apellidosDocente: "Pérez Gómez",
-      emailDocente: "j.perez@colegio.edu.pe",
-      dniAlumno: "87654321",
-      nombresAlumno: "Maria",
-      apellidosAlumno: "López Silva",
-      fechaInscripcion: "15/02/2026",
-      dniApoderado: "09876543",
-      nombresApoderado: "Carlos",
-      apellidosApoderado: "López Mendoza",
-      telefonoApoderado: "987654321",
-    };
-
-    return generarExcel(
-      "plantilla_carga_unificada",
-      "Carga Unificada",
-      columnas,
-      ejemplo,
-    );
-  },
-
-  // 2. MODO B - PASO 1: ESTRUCTURA
+  // PASO 1: ESTRUCTURA ACADÉMICA Y CURSOS (4 columnas)
   descargarEstructura: () => {
     const columnas = [
-      { header: "Nivel", key: "nivel", width: 15 },
-      { header: "Grado", key: "grado", width: 16 },
-      { header: "Sección", key: "seccion", width: 12 },
-      { header: "Curso", key: "curso", width: 22 },
+      { header: "Nivel", key: "nivel", width: 16 },
+      { header: "Grado", key: "grado", width: 22 },
+      { header: "Sección", key: "seccion", width: 14 },
+      { header: "Curso", key: "curso", width: 24 },
     ];
 
     const ejemplo = {
       nivel: "Secundaria",
-      grado: "1° Secundaria",
+      grado: "1er Año Secundaria",
       seccion: "A",
-      curso: "Matemáticas",
+      curso: "Matemática",
     };
 
     return generarExcel(
@@ -126,18 +81,18 @@ export const plantillaGenerators = {
     );
   },
 
-  // 3. MODO B - PASO 2: DOCENTES
+  // PASO 2: PLANA DOCENTE (5 columnas)
   descargarDocentes: () => {
     const columnas = [
-      { header: "DNI", key: "dni", width: 15 },
+      { header: "DNI", key: "dni", width: 16 },
       { header: "Nombres", key: "nombres", width: 22 },
       { header: "Apellidos", key: "apellidos", width: 22 },
       { header: "Email", key: "email", width: 28 },
-      { header: "Teléfono", key: "telefono", width: 16 },
+      { header: "Teléfono", key: "telefono", width: 18 },
     ];
 
     const ejemplo = {
-      dni: "12345678",
+      dni: "01234567",
       nombres: "Juan Carlos",
       apellidos: "Pérez Gómez",
       email: "j.perez@colegio.edu.pe",
@@ -152,27 +107,29 @@ export const plantillaGenerators = {
     );
   },
 
-  // 4. MODO B - PASO 3: ESTUDIANTES Y APODERADOS
+  // PASO 3: ESTUDIANTES Y APODERADOS (11 columnas)
   descargarEstudiantes: () => {
     const columnas = [
-      { header: "DNI Alumno", key: "dniAlumno", width: 15 },
+      { header: "DNI Alumno", key: "dniAlumno", width: 16 },
       { header: "Nombres Alumno", key: "nombresAlumno", width: 22 },
       { header: "Apellidos Alumno", key: "apellidosAlumno", width: 22 },
-      { header: "Grado", key: "grado", width: 16 },
-      { header: "Sección", key: "seccion", width: 12 },
+      { header: "Grado", key: "grado", width: 22 },
+      { header: "Sección", key: "seccion", width: 14 },
+      { header: "Fecha Nacimiento", key: "fechaNacimiento", width: 18 },
       { header: "Fecha Inscripción", key: "fechaInscripcion", width: 18 },
-      { header: "DNI Apoderado", key: "dniApoderado", width: 15 },
+      { header: "DNI Apoderado", key: "dniApoderado", width: 16 },
       { header: "Nombres Apoderado", key: "nombresApoderado", width: 22 },
       { header: "Apellidos Apoderado", key: "apellidosApoderado", width: 22 },
       { header: "Teléfono Apoderado", key: "telefonoApoderado", width: 18 },
     ];
 
     const ejemplo = {
-      dniAlumno: "87654321",
+      dniAlumno: "08765432",
       nombresAlumno: "Maria",
       apellidosAlumno: "López Silva",
-      grado: "1° Secundaria",
+      grado: "1er Año Secundaria",
       seccion: "A",
+      fechaNacimiento: "15/05/2012",
       fechaInscripcion: "15/02/2026",
       dniApoderado: "09876543",
       nombresApoderado: "Carlos",

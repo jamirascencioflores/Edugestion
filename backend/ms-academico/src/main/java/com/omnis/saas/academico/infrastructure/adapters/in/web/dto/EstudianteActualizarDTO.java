@@ -8,6 +8,7 @@ public record EstudianteActualizarDTO(
         String apellidos,
         String dni,
         LocalDate fechaNacimiento,
+        LocalDate fechaInscripcion, // 👈 Agregado para soportar edición de fecha de inscripción
         String emailInstitucional,
         Long seccionId,
         Boolean estado,

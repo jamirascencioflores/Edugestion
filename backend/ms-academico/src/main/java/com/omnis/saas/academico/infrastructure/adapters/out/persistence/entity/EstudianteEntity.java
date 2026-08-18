@@ -70,4 +70,7 @@ public class EstudianteEntity {
 
     @Column(name = "parentesco_apoderado", length = 50)
     private String parentescoApoderado;
+
+    @Column(name = "fecha_inscripcion")
+    private LocalDate fechaInscripcion;
 }

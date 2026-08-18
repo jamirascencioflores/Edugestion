@@ -12,6 +12,8 @@ import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.Ro
 import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.UsuarioJpaRepository;
 import com.omnis.saas.auth.infrastructure.util.ExcelHelper;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -87,59 +89,41 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void procesarFilaDocente(Row row, ColegioEntity colegio, RolEntity rolDocente, Long colegioId, int filaActualNum) {
-        String cell0 = ExcelHelper.getCellValueAsString(row.getCell(0));
+        // Lectura de las columnas del Paso 2
+        String dni = formatearDni(row.getCell(0));                                    // Col 0: DNI
+        String nombres = ExcelHelper.getCellValueAsString(row.getCell(1));             // Col 1: Nombres
+        String apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));           // Col 2: Apellidos
+        String email = ExcelHelper.getCellValueAsString(row.getCell(3));               // Col 3: Email
 
-        String dni;
-        String nombres;
-        String apellidos;
-        String email;
-        String especialidad;
-
-        // Detecta Plantilla Unificada
-        if (esNombreGrado(cell0)) {
-            especialidad = ExcelHelper.getCellValueAsString(row.getCell(2)); // Curso como especialidad
-            dni = ExcelHelper.getCellValueAsString(row.getCell(3));          // DNI Docente
-            nombres = ExcelHelper.getCellValueAsString(row.getCell(4));      // Nombres Docente
-            apellidos = ExcelHelper.getCellValueAsString(row.getCell(5));    // Apellidos Docente
-            email = ExcelHelper.getCellValueAsString(row.getCell(6));        // Email Docente
-        } else {
-            dni = cell0;
-            nombres = ExcelHelper.getCellValueAsString(row.getCell(1));
-            apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));
-            email = ExcelHelper.getCellValueAsString(row.getCell(3));
-            especialidad = ExcelHelper.getCellValueAsString(row.getCell(4));
+        if (dni.trim().isEmpty() || nombres.trim().isEmpty() || apellidos.trim().isEmpty()) {
+            throw new IllegalArgumentException("DNI, Nombres y Apellidos del docente son obligatorios.");
         }
 
-        // 👈 Si la fila no contiene datos válidos de docente, la salta limpiamente
-        if (dni.trim().isEmpty() || nombres.trim().isEmpty()) {
-            return;
-        }
+        String emailFinal = email.trim().isEmpty() ? ("docente." + dni.trim() + "@colegio.edu.pe") : email.trim().toLowerCase();
 
-        // 1. Buscar por DNI
         Optional<DocenteEntity> docenteOpt = docenteJpaRepository.findByDocumentoIdentidadAndColegioId(dni.trim(), colegioId);
 
         UsuarioEntity usuario;
         DocenteEntity docenteEntity;
 
         if (docenteOpt.isPresent()) {
-            // 🔄 UPDATE: Si el docente ya existe, actualiza sus datos sin fallar por duplicados
+            // Actualización
             docenteEntity = docenteOpt.get();
             docenteEntity.setNombres(nombres.trim());
             docenteEntity.setApellidos(apellidos.trim());
-            if (!email.isEmpty()) docenteEntity.setEmail(email.trim());
-            if (!especialidad.isEmpty()) docenteEntity.setEspecialidad(especialidad.trim());
+            docenteEntity.setEmail(emailFinal);
+            docenteEntity.setEspecialidad("Docente de Aula");
 
             usuario = docenteEntity.getUsuarioEntity();
             if (usuario != null) {
-                if (!email.isEmpty()) usuario.setEmail(email.trim());
+                usuario.setEmail(emailFinal);
                 usuario.setNombreCompleto(nombres.trim() + " " + apellidos.trim());
                 usuarioJpaRepository.save(usuario);
             }
         } else {
-            // ➕ INSERT: Verifica si el email ya existe en UsuarioEntity para no chocar con la Unique Constraint
-            String emailFinal = email.trim();
+            // Inserción
             if (usuarioJpaRepository.existsByEmail(emailFinal)) {
-                emailFinal = "docente." + dni.trim() + "@colegio.edu.pe"; // Email alternativo automático si el email está ocupado por una prueba previa
+                emailFinal = "docente." + dni.trim() + "@colegio.edu.pe";
             }
 
             usuario = UsuarioEntity.builder()
@@ -159,7 +143,7 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
                     .nombres(nombres.trim())
                     .apellidos(apellidos.trim())
                     .email(emailFinal)
-                    .especialidad(especialidad.trim())
+                    .especialidad("Docente de Aula")
                     .colegio(colegio)
                     .usuarioEntity(usuario)
                     .estado(true)
@@ -169,11 +153,12 @@ public class ImportacionDocenteServiceImpl implements ImportacionDocenteUseCase 
         docenteJpaRepository.save(docenteEntity);
     }
 
-    private boolean esNombreGrado(String texto) {
-        if (texto == null || texto.trim().isEmpty()) return false;
-        String t = texto.toLowerCase().trim();
-        // Reconoce "1° Secundaria", "1 Secundaria", "1ro", "Primaria", etc.
-        return t.contains("secundaria") || t.contains("primaria") || t.contains("inicial")
-                || t.contains("°") || t.matches(".*\\d+.*");
+    private String formatearDni(Cell cell) {
+        if (cell == null) return "";
+        if (cell.getCellType() == CellType.NUMERIC) {
+            long valorNumerico = (long) cell.getNumericCellValue();
+            return String.format("%08d", valorNumerico);
+        }
+        return ExcelHelper.getCellValueAsString(cell).trim();
     }
 }

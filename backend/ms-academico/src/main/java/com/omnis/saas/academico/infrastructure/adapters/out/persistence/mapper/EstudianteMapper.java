@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface EstudianteMapper {
+
     @Mapping(source = "seccion.id", target = "seccionId")
     Estudiante toDomain(EstudianteEntity entity);
 

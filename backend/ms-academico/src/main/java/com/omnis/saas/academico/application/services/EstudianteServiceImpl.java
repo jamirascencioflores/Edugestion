@@ -20,9 +20,8 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
 
     @Override
     @Transactional
-    public Estudiante registrar(Estudiante estudiante, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) { // <-- Parámetro añadido
+    public Estudiante registrar(Estudiante estudiante, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) {
         Estudiante estudianteGuardado = repositoryPort.guardar(estudiante);
-        // Pasamos la fecha al publicador de eventos
         eventPublisher.publicarAlumnoRegistrado(estudianteGuardado, gradoId, anioEscolar, fechaInscripcion);
         return estudianteGuardado;
     }
@@ -49,12 +48,13 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
         existente.setApellidos(dto.apellidos());
         existente.setDni(dto.dni());
         existente.setFechaNacimiento(dto.fechaNacimiento());
+        existente.setFechaInscripcion(dto.fechaInscripcion()); // 👈 ASIGNACIÓN AGREGADA
         existente.setEmailInstitucional(dto.emailInstitucional());
         existente.setSeccionId(dto.seccionId());
         existente.setEstado(dto.estado());
         existente.setApoderadoIds(dto.apoderadoIds() != null ? dto.apoderadoIds() : List.of());
 
-        // 👇 Actualización de datos del apoderado
+        // Actualización de datos del apoderado
         existente.setNombreApoderado(dto.nombreApoderado());
         existente.setDniApoderado(dto.dniApoderado());
         existente.setTelefonoApoderado(dto.telefonoApoderado());
@@ -70,6 +70,7 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
 
         return actualizado;
     }
+
     @Override
     @Transactional
     public void eliminar(Long id, Long colegioId) {
@@ -89,13 +90,10 @@ public class EstudianteServiceImpl implements EstudianteUseCase {
         return repositoryPort.buscarPorSeccion(seccionId);
     }
 
-    // 👇 MÉTODO AÑADIDO PARA SOPORTAR FEIGN
     @Transactional(readOnly = true)
     @Override
     public Estudiante buscarPorId(Long id) {
         return repositoryPort.buscarPorId(id)
                 .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con ID: " + id));
     }
-
-
 }

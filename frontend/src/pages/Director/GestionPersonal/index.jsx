@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import KpiCards from "./KpiCards";
 import TablaDocentes from "./TablaDocentes";
 import ModalDocente from "./ModalDocente";
+import { Paginacion } from "../../../components/common/Paginacion";
 import api from "../../../api/axiosConfig";
 
 export default function Docentes() {
@@ -16,6 +17,10 @@ export default function Docentes() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("TODOS");
+
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const registrosPorPagina = 8;
 
   const fetchDocentes = async () => {
     try {
@@ -146,6 +151,7 @@ export default function Docentes() {
     }
   };
 
+  // 1. Filtrado
   const filteredDocentes = docentes.filter((d) => {
     const matchesSearch =
       d.nombres?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,6 +166,15 @@ export default function Docentes() {
     if (filterEstado === "INACTIVOS") return d.estado === false;
     return true;
   });
+
+  // 2. Cálculos de Paginación
+  const totalRegistros = filteredDocentes.length;
+  const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
+  const indiceInicio = (paginaActual - 1) * registrosPorPagina;
+  const docentesPaginados = filteredDocentes.slice(
+    indiceInicio,
+    indiceInicio + registrosPorPagina,
+  );
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -198,7 +213,10 @@ export default function Docentes() {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPaginaActual(1);
+            }}
             placeholder="Buscar por nombre, documento o correo..."
             className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
           />
@@ -206,7 +224,10 @@ export default function Docentes() {
 
         <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-xs font-semibold w-full md:w-auto justify-between sm:justify-center">
           <button
-            onClick={() => setFilterEstado("TODOS")}
+            onClick={() => {
+              setFilterEstado("TODOS");
+              setPaginaActual(1);
+            }}
             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "TODOS"
                 ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-xs"
@@ -216,7 +237,10 @@ export default function Docentes() {
             Todos ({docentes.length})
           </button>
           <button
-            onClick={() => setFilterEstado("ACTIVOS")}
+            onClick={() => {
+              setFilterEstado("ACTIVOS");
+              setPaginaActual(1);
+            }}
             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "ACTIVOS"
                 ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
@@ -226,7 +250,10 @@ export default function Docentes() {
             Activos ({docentes.filter((d) => d.estado).length})
           </button>
           <button
-            onClick={() => setFilterEstado("INACTIVOS")}
+            onClick={() => {
+              setFilterEstado("INACTIVOS");
+              setPaginaActual(1);
+            }}
             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "INACTIVOS"
                 ? "bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-xs"
@@ -243,15 +270,28 @@ export default function Docentes() {
           Cargando personal docente...
         </div>
       ) : (
-        <TablaDocentes
-          docentes={filteredDocentes}
-          onToggleEstado={handleToggleEstado}
-          onDelete={handleEliminarDocente}
-          onEdit={(docente) => {
-            setDocenteEdit(docente);
-            setIsModalOpen(true);
-          }}
-        />
+        <div className="space-y-4">
+          {/* Contenedor con altura mínima para evitar que la paginación salte */}
+          <div className="min-h-[480px]">
+            <TablaDocentes
+              docentes={docentesPaginados}
+              onToggleEstado={handleToggleEstado}
+              onDelete={handleEliminarDocente}
+              onEdit={(docente) => {
+                setDocenteEdit(docente);
+                setIsModalOpen(true);
+              }}
+            />
+          </div>
+
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalRegistros={totalRegistros}
+            registrosPorPagina={registrosPorPagina}
+            onCambiarPagina={(nuevaPagina) => setPaginaActual(nuevaPagina)}
+          />
+        </div>
       )}
 
       <ModalDocente

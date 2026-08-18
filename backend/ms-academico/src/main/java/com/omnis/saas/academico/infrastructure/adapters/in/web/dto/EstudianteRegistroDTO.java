@@ -27,6 +27,7 @@ public record EstudianteRegistroDTO(
                 .apellidos(this.apellidos)
                 .dni(this.dni)
                 .fechaNacimiento(this.fechaNacimiento)
+                .fechaInscripcion(this.fechaInscripcion) // 👈 Agregado aquí
                 .emailInstitucional(this.emailInstitucional)
                 .seccionId(this.seccionId)
                 .colegioId(colegioId)

@@ -1,4 +1,3 @@
-// src/pages/Director/GestionAcademica/Estudiantes/index.jsx
 import { useState, useEffect } from "react";
 import { Plus, GraduationCap, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -6,6 +5,7 @@ import api from "../../../../api/axiosConfig";
 import TablaEstudiantes from "./TablaEstudiantes";
 import ModalEstudiante from "./ModalEstudiante";
 import KpiCardsEstudiantes from "./KpiCardsEstudiantes";
+import { Paginacion } from "../../../../components/common/Paginacion";
 
 export default function EstudiantesIndex() {
   const [estudiantes, setEstudiantes] = useState([]);
@@ -16,10 +16,15 @@ export default function EstudiantesIndex() {
   const [estudianteEditando, setEstudianteEditando] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Filtros
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroGrado, setFiltroGrado] = useState("");
   const [filtroSeccion, setFiltroSeccion] = useState("");
   const [filterEstado, setFilterEstado] = useState("TODOS");
+
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const registrosPorPagina = 8;
 
   const fetchData = async () => {
     try {
@@ -76,6 +81,7 @@ export default function EstudiantesIndex() {
     setIsModalOpen(false);
   };
 
+  // 1. Filtrado y ordenamiento de estudiantes
   const estudiantesFiltrados = estudiantes
     .filter((est) => {
       const coincideTexto = `${est.nombres} ${est.apellidos} ${est.dni}`
@@ -104,6 +110,15 @@ export default function EstudiantesIndex() {
       );
     })
     .sort((a, b) => a.apellidos.localeCompare(b.apellidos));
+
+  // 2. Cálculos de Paginación
+  const totalRegistros = estudiantesFiltrados.length;
+  const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
+  const indiceInicio = (paginaActual - 1) * registrosPorPagina;
+  const estudiantesPaginados = estudiantesFiltrados.slice(
+    indiceInicio,
+    indiceInicio + registrosPorPagina,
+  );
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -146,7 +161,10 @@ export default function EstudiantesIndex() {
               placeholder="Buscar por nombre o DNI..."
               value={filtroTexto}
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
-              onChange={(e) => setFiltroTexto(e.target.value)}
+              onChange={(e) => {
+                setFiltroTexto(e.target.value);
+                setPaginaActual(1);
+              }}
             />
           </div>
 
@@ -156,6 +174,7 @@ export default function EstudiantesIndex() {
             onChange={(e) => {
               setFiltroGrado(e.target.value);
               setFiltroSeccion("");
+              setPaginaActual(1);
             }}
           >
             <option value="">Todos los grados</option>
@@ -170,7 +189,10 @@ export default function EstudiantesIndex() {
             className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none text-sm disabled:opacity-50"
             value={filtroSeccion}
             disabled={!filtroGrado}
-            onChange={(e) => setFiltroSeccion(e.target.value)}
+            onChange={(e) => {
+              setFiltroSeccion(e.target.value);
+              setPaginaActual(1);
+            }}
           >
             <option value="">Todas las secciones</option>
             {secciones
@@ -186,7 +208,10 @@ export default function EstudiantesIndex() {
         {/* Pills de Estado */}
         <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-xs font-semibold w-full sm:w-fit justify-between sm:justify-start">
           <button
-            onClick={() => setFilterEstado("TODOS")}
+            onClick={() => {
+              setFilterEstado("TODOS");
+              setPaginaActual(1);
+            }}
             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "TODOS"
                 ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-xs"
@@ -196,7 +221,10 @@ export default function EstudiantesIndex() {
             Todos ({estudiantes.length})
           </button>
           <button
-            onClick={() => setFilterEstado("MATRICULADOS")}
+            onClick={() => {
+              setFilterEstado("MATRICULADOS");
+              setPaginaActual(1);
+            }}
             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "MATRICULADOS"
                 ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
@@ -206,7 +234,10 @@ export default function EstudiantesIndex() {
             Matriculados ({estudiantes.filter((e) => e.estado).length})
           </button>
           <button
-            onClick={() => setFilterEstado("INACTIVOS")}
+            onClick={() => {
+              setFilterEstado("INACTIVOS");
+              setPaginaActual(1);
+            }}
             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all ${
               filterEstado === "INACTIVOS"
                 ? "bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-xs"
@@ -226,13 +257,26 @@ export default function EstudiantesIndex() {
           ></div>
         </div>
       ) : (
-        <TablaEstudiantes
-          estudiantes={estudiantesFiltrados}
-          secciones={secciones}
-          grados={grados}
-          onRefresh={fetchData}
-          onEdit={handleOpenModal}
-        />
+        <div className="space-y-4">
+          {/* Contenedor con altura mínima fija para evitar saltos */}
+          <div className="min-h-[480px]">
+            <TablaEstudiantes
+              estudiantes={estudiantesPaginados}
+              secciones={secciones}
+              grados={grados}
+              onRefresh={fetchData}
+              onEdit={handleOpenModal}
+            />
+          </div>
+
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalRegistros={totalRegistros}
+            registrosPorPagina={registrosPorPagina}
+            onCambiarPagina={(nuevaPagina) => setPaginaActual(nuevaPagina)}
+          />
+        </div>
       )}
 
       {isModalOpen && (

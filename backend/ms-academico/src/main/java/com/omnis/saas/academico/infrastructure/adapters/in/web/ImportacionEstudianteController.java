@@ -47,7 +47,12 @@ public class ImportacionEstudianteController {
             headerStyle.setFont(font);
 
             Row headerRow = sheet.createRow(0);
-            String[] columnas = {"DNI", "Nombres", "Apellidos", "Fecha Nacimiento (YYYY-MM-DD)", "Grado", "Sección"};
+            String[] columnas = {
+                    "DNI Alumno", "Nombres Alumno", "Apellidos Alumno",
+                    "Grado", "Sección",
+                    "Fecha Inscripción",
+                    "DNI Apoderado", "Nombres Apoderado", "Apellidos Apoderado", "Teléfono Apoderado"
+            };
 
             for (int i = 0; i < columnas.length; i++) {
                 Cell cell = headerRow.createCell(i);

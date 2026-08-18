@@ -1,14 +1,13 @@
 package com.omnis.saas.academico.application.services;
 
-import com.omnis.saas.academico.domain.model.Curso;
-import com.omnis.saas.academico.domain.model.Grado;
-import com.omnis.saas.academico.domain.model.Seccion;
 import com.omnis.saas.academico.domain.ports.in.ImportacionEstructuraUseCase;
-import com.omnis.saas.academico.domain.ports.out.CursoOutputPort;
-import com.omnis.saas.academico.domain.ports.out.GradoOutputPort;
-import com.omnis.saas.academico.domain.ports.out.SeccionOutputPort;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.ImportacionResultadoDTO;
-import com.omnis.saas.academico.infrastructure.config.tenant.TenantContext;
+import com.omnis.saas.academico.infrastructure.adapters.out.persistence.entity.CursoEntity;
+import com.omnis.saas.academico.infrastructure.adapters.out.persistence.entity.GradoEntity;
+import com.omnis.saas.academico.infrastructure.adapters.out.persistence.entity.SeccionEntity;
+import com.omnis.saas.academico.infrastructure.adapters.out.persistence.repository.SpringDataCursoRepository;
+import com.omnis.saas.academico.infrastructure.adapters.out.persistence.repository.SpringDataGradoRepository;
+import com.omnis.saas.academico.infrastructure.adapters.out.persistence.repository.SpringDataSeccionRepository;
 import com.omnis.saas.academico.infrastructure.util.ExcelHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
@@ -28,9 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUseCase {
 
-    private final GradoOutputPort gradoOutputPort;
-    private final SeccionOutputPort seccionOutputPort;
-    private final CursoOutputPort cursoOutputPort;
+    private final SpringDataGradoRepository gradoRepository;
+    private final SpringDataSeccionRepository seccionRepository;
+    private final SpringDataCursoRepository cursoRepository;
 
     @Override
     public ImportacionResultadoDTO procesarExcelEstructura(MultipartFile file, Long colegioId) {
@@ -50,13 +49,16 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
                 try {
                     procesarFila(row, colegioId, filaActualNum);
                     exitosos++;
-                } catch (Exception e) {
+                } catch (IllegalArgumentException e) {
                     fallidos++;
                     errores.add("Fila " + filaActualNum + ": " + e.getMessage());
+                } catch (Exception e) {
+                    fallidos++;
+                    errores.add("Fila " + filaActualNum + ": Error procesando estructura - " + e.getMessage());
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Error al leer el archivo Excel: " + e.getMessage());
+            throw new RuntimeException("Error al leer el archivo Excel de estructura: " + e.getMessage());
         }
 
         return ImportacionResultadoDTO.builder()
@@ -68,13 +70,7 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void procesarFila(Row row, Long colegioId, int filaNum) {
-        // 👈 Validación de seguridad para evitar colegioId nulo en entidades
-        Long colegioIdFinal = (colegioId != null) ? colegioId : TenantContext.getColegioId();
-        if (colegioIdFinal == null) {
-            colegioIdFinal = 1L; // Fallback
-        }
-
+    public void procesarFila(Row row, Long colegioId, int filaActualNum) {
         String col0 = ExcelHelper.getCellValueAsString(row.getCell(0));
         String col1 = ExcelHelper.getCellValueAsString(row.getCell(1));
         String col2 = ExcelHelper.getCellValueAsString(row.getCell(2));
@@ -84,66 +80,82 @@ public class ImportacionEstructuraServiceImpl implements ImportacionEstructuraUs
         String nombreSeccion;
         String nombreCurso;
 
-        if (esNombreGrado(col0)) {
-            nombreGrado = col0;
-            nombreSeccion = col1;
-            nombreCurso = col2;
-        } else {
+        // Detección: si la columna 0 es solo el Nivel (ej: "Secundaria"), se desplaza a las siguientes columnas
+        if (esSoloNivel(col0)) {
             nombreGrado = col1;
             nombreSeccion = col2;
             nombreCurso = col3;
+        } else {
+            nombreGrado = col0;
+            nombreSeccion = col1;
+            nombreCurso = col2;
         }
 
-        if (nombreGrado.isEmpty() || nombreSeccion.isEmpty()) {
-            throw new IllegalArgumentException("Grado y Sección son obligatorios.");
+        if (nombreGrado.isEmpty() || nombreSeccion.isEmpty() || nombreCurso.isEmpty()) {
+            throw new IllegalArgumentException("Grado, Sección y Curso son obligatorios.");
         }
 
-        final Long finalColegioId = colegioIdFinal;
+        // 1. Limpieza de nombres
+        String seccionLimpia = nombreSeccion.trim().toUpperCase().replace("SECCIÓN", "").replace("SECCION", "").trim();
+        String cursoLimpio = normalizarNombreCurso(nombreCurso);
 
-        // 1. Grado
-        final String gradoBuscado = nombreGrado.trim();
-        Grado grado = gradoOutputPort.buscarGradoPorNombreYColegio(gradoBuscado, finalColegioId)
-                .orElseGet(() -> gradoOutputPort.guardar(
-                        Grado.builder()
-                                .nombre(gradoBuscado)
-                                .orden(filaNum)
-                                .colegioId(finalColegioId) // 👈 Garantizado no nulo
-                                .estado(true)
-                                .build()
-                ));
+        // 2. Grado (búsqueda estricta por número de grado o nombre completo)
+        List<GradoEntity> todosLosGrados = gradoRepository.findAll();
+        String numExcel = nombreGrado.replaceAll("[^0-9]", "");
 
-        // 2. Sección
-        final String seccionBuscada = nombreSeccion.trim();
-        Seccion seccion = seccionOutputPort.buscarSeccionPorNombreYGrado(seccionBuscada, grado.getId())
-                .orElseGet(() -> seccionOutputPort.guardar(
-                        Seccion.builder()
-                                .nombre(seccionBuscada)
-                                .gradoId(grado.getId())
-                                .colegioId(finalColegioId)
-                                .capacidadMaxima(50)
-                                .estado(true)
-                                .build()
-                ));
+        GradoEntity grado = todosLosGrados.stream()
+                .filter(g -> g.getColegioId() == null || g.getColegioId().equals(colegioId))
+                .filter(g -> {
+                    String numBD = g.getNombre().replaceAll("[^0-9]", "");
+                    if (!numExcel.isEmpty() && !numBD.isEmpty()) {
+                        return numExcel.equals(numBD);
+                    }
+                    return g.getNombre().trim().equalsIgnoreCase(nombreGrado.trim());
+                })
+                .findFirst()
+                .orElseGet(() -> gradoRepository.save(GradoEntity.builder()
+                        .nombre(nombreGrado.trim())
+                        .colegioId(colegioId)
+                        .estado(true)
+                        .build()));
 
-        // 3. Curso
-        if (!nombreCurso.isEmpty()) {
-            final String cursoBuscado = nombreCurso.trim();
-            cursoOutputPort.buscarCursoPorNombreYColegio(cursoBuscado, finalColegioId)
-                    .orElseGet(() -> cursoOutputPort.guardar(
-                            Curso.builder()
-                                    .nombre(cursoBuscado)
-                                    .colegioId(finalColegioId)
-                                    .estado(true)
-                                    .build()
-                    ));
+        // 3. Sección (buscar o crear asignando capacidadMaxima)
+        seccionRepository.findByNombreAndGradoId(seccionLimpia, grado.getId())
+                .orElseGet(() -> seccionRepository.save(SeccionEntity.builder()
+                        .nombre(seccionLimpia)
+                        .capacidadMaxima(30)
+                        .grado(grado)
+                        .colegioId(colegioId)
+                        .estado(true)
+                        .build()));
+
+        // 4. Curso (buscar o crear evitando duplicados)
+        List<CursoEntity> todosLosCursos = cursoRepository.findAll();
+        boolean cursoExiste = todosLosCursos.stream()
+                .anyMatch(c -> c.getColegioId().equals(colegioId) && c.getNombre().equalsIgnoreCase(cursoLimpio));
+
+        if (!cursoExiste) {
+            cursoRepository.save(CursoEntity.builder()
+                    .nombre(cursoLimpio)
+                    .colegioId(colegioId)
+                    .estado(true)
+                    .build());
         }
     }
 
-    private boolean esNombreGrado(String texto) {
-        if (texto == null || texto.trim().isEmpty()) return false;
-        String t = texto.toLowerCase().trim();
-        // Reconoce "1° Secundaria", "1 Secundaria", "1ro", "Primaria", etc.
-        return t.contains("secundaria") || t.contains("primaria") || t.contains("inicial")
-                || t.contains("°") || t.matches(".*\\d+.*");
+    private boolean esSoloNivel(String texto) {
+        if (texto == null) return false;
+        String t = texto.trim().toLowerCase();
+        return (t.equals("secundaria") || t.equals("primaria") || t.equals("inicial"))
+                && !t.matches(".*\\d+.*");
+    }
+
+    private String normalizarNombreCurso(String curso) {
+        if (curso == null) return "";
+        String limpio = curso.trim();
+        if (limpio.equalsIgnoreCase("Matemáticas")) {
+            return "Matemática";
+        }
+        return limpio;
     }
 }

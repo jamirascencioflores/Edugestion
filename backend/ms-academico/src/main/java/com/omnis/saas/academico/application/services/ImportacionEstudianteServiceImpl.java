@@ -76,42 +76,28 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void procesarFilaEstudiante(Row row, Long colegioId, int filaActualNum) {
-        String cell0 = ExcelHelper.getCellValueAsString(row.getCell(0));
+        // Lectura directa de las 11 columnas del Paso 3 (Estudiantes y Apoderados)
+        String dni = ExcelHelper.getDniFormatted(row.getCell(0));                            // Col 0: DNI Alumno
+        String nombres = ExcelHelper.getCellValueAsString(row.getCell(1));                    // Col 1: Nombres Alumno
+        String apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));                  // Col 2: Apellidos Alumno
+        String nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(3));                // Col 3: Grado
+        String nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(4));              // Col 4: Sección
+        Cell cellNacimiento = row.getCell(5);                                                // Col 5: Fecha Nacimiento
+        Cell cellInscripcion = row.getCell(6);                                               // Col 6: Fecha Inscripción
+        String dniApoderado = ExcelHelper.getDniFormatted(row.getCell(7));                   // Col 7: DNI Apoderado
+        String nombreApoderado = ExcelHelper.getCellValueAsString(row.getCell(8));            // Col 8: Nombres Apoderado
+        String apellidosApoderado = ExcelHelper.getCellValueAsString(row.getCell(9));         // Col 9: Apellidos Apoderado
+        String telefonoApoderado = ExcelHelper.getCellValueAsString(row.getCell(10));         // Col 10: Teléfono Apoderado
 
-        String dni;
-        String nombres;
-        String apellidos;
-        String nombreGrado;
-        String nombreSeccion;
-        Cell cellFecha;
+        // Parseo seguro de fechas
+        LocalDate fechaNacimientoExcel = ExcelHelper.getCellValueAsLocalDate(cellNacimiento);
+        final LocalDate fechaNacimientoFinal = (fechaNacimientoExcel != null) ? fechaNacimientoExcel : LocalDate.of(2012, 1, 1);
 
-        // 👈 Detección dinámica de Plantilla:
-        // Si Columna 0 contiene patrón de Grado (ej: "1° Secundaria"), es Plantilla Unificada
-        if (esNombreGrado(cell0)) {
-            nombreGrado = cell0;                                               // Columna 0
-            nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(1)); // Columna 1
-            // Columna 2 = Curso (se omite aquí)
-            // Columnas 3..6 = Docente (se omiten aquí)
-            dni = ExcelHelper.getCellValueAsString(row.getCell(7));             // Columna 7: DNI Alumno
-            nombres = ExcelHelper.getCellValueAsString(row.getCell(8));         // Columna 8: Nombres Alumno
-            apellidos = ExcelHelper.getCellValueAsString(row.getCell(9));       // Columna 9: Apellidos Alumno
-            cellFecha = row.getCell(10);                                        // Columna 10: Fecha Inscripción
-        } else {
-            // Es Plantilla Modular Paso 3 (Columna 0 es DNI Alumno)
-            dni = cell0;
-            nombres = ExcelHelper.getCellValueAsString(row.getCell(1));
-            apellidos = ExcelHelper.getCellValueAsString(row.getCell(2));
-            nombreGrado = ExcelHelper.getCellValueAsString(row.getCell(3));
-            nombreSeccion = ExcelHelper.getCellValueAsString(row.getCell(4));
-            // Columna 5 = DNI Apoderado (se omite por ahora)
-            cellFecha = row.getCell(6);                                         // Columna 6: Fecha Inscripción
-        }
-
-        LocalDate fechaInscripcionExcel = ExcelHelper.getCellValueAsLocalDate(cellFecha);
+        LocalDate fechaInscripcionExcel = ExcelHelper.getCellValueAsLocalDate(cellInscripcion);
         final LocalDate fechaInscripcionFinal = (fechaInscripcionExcel != null) ? fechaInscripcionExcel : LocalDate.now();
 
         if (dni.isEmpty() || nombres.isEmpty() || apellidos.isEmpty() || nombreGrado.isEmpty() || nombreSeccion.isEmpty()) {
-            throw new IllegalArgumentException("DNI, Nombres, Apellidos, Grado y Sección son obligatorios.");
+            throw new IllegalArgumentException("DNI, Nombres, Apellidos, Grado y Sección del estudiante son obligatorios.");
         }
 
         List<GradoEntity> todosLosGrados = gradoRepository.findAll();
@@ -145,20 +131,24 @@ public class ImportacionEstudianteServiceImpl implements ImportacionEstudianteUs
 
         estudiante.setNombres(nombres);
         estudiante.setApellidos(apellidos);
-        estudiante.setFechaNacimiento(LocalDate.of(2010, 1, 1));
+        estudiante.setFechaNacimiento(fechaNacimientoFinal);
+        estudiante.setFechaInscripcion(fechaInscripcionFinal);
         estudiante.setSeccion(seccion);
+
+        String apoderadoCompleto = (nombreApoderado + " " + apellidosApoderado).trim();
+        if (!apoderadoCompleto.isEmpty()) {
+            estudiante.setNombreApoderado(apoderadoCompleto);
+        }
+        if (!dniApoderado.isEmpty()) {
+            estudiante.setDniApoderado(dniApoderado.trim());
+        }
+        if (!telefonoApoderado.isEmpty()) {
+            estudiante.setTelefonoApoderado(telefonoApoderado.trim());
+        }
 
         EstudianteEntity estudianteGuardado = estudianteRepository.save(estudiante);
 
         asignarOCompletarDeudasEstudiante(colegioId, estudianteGuardado.getId(), grado.getId(), 2026, fechaInscripcionFinal);
-    }
-
-    private boolean esNombreGrado(String texto) {
-        if (texto == null || texto.trim().isEmpty()) return false;
-        String t = texto.toLowerCase().trim();
-        // Reconoce "1° Secundaria", "1 Secundaria", "1ro", "Primaria", etc.
-        return t.contains("secundaria") || t.contains("primaria") || t.contains("inicial")
-                || t.contains("°") || t.matches(".*\\d+.*");
     }
 
     private String normalizarTexto(String texto) {

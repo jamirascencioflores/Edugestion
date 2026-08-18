@@ -13,6 +13,7 @@ public class Estudiante {
     private String apellidos;
     private String dni;
     private LocalDate fechaNacimiento;
+    private LocalDate fechaInscripcion; // 👈 Campo agregado al modelo de dominio
     private String emailInstitucional;
     private Long seccionId;
     private Long colegioId;

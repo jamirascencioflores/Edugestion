@@ -1,4 +1,3 @@
-// src/pages/Director/GestionAcademica/Estudiantes/TablaEstudiantes.jsx
 import { Edit, Trash2, Power, User } from "lucide-react";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
@@ -72,7 +71,7 @@ export default function TablaEstudiantes({
 
   if (!estudiantes || estudiantes.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400 min-h-[300px] flex items-center justify-center">
         No hay estudiantes registrados con los criterios seleccionados.
       </div>
     );
@@ -80,8 +79,8 @@ export default function TablaEstudiantes({
 
   return (
     <>
-      {/* VISTA MÓVIL (Cards) - Se activa en pantallas < lg */}
-      <div className="lg:hidden space-y-3">
+      {/* VISTA MÓVIL (Cards) con min-h para estabilidad */}
+      <div className="lg:hidden space-y-3 min-h-[560px]">
         {estudiantes.map((e) => {
           const iniciales = `${e.nombres?.[0] || ""}${
             e.apellidos?.[0] || ""
@@ -226,8 +225,8 @@ export default function TablaEstudiantes({
         })}
       </div>
 
-      {/* VISTA DESKTOP (Tabla tradicional) - Se activa en pantallas >= lg */}
-      <div className="hidden lg:block bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+      {/* VISTA DESKTOP con min-h fija */}
+      <div className="hidden lg:block bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700 min-h-[560px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">

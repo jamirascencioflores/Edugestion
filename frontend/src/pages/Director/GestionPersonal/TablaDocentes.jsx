@@ -9,7 +9,7 @@ export default function TablaDocentes({
 }) {
   if (docentes.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-500">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-500 min-h-[300px] flex items-center justify-center">
         No se encontraron docentes con los criterios ingresados.
       </div>
     );
@@ -17,8 +17,8 @@ export default function TablaDocentes({
 
   return (
     <>
-      {/* VISTA MÓVIL (Cards) - Se activa en pantallas pequeñas (< md) */}
-      <div className="md:hidden space-y-3">
+      {/* VISTA MÓVIL (Cards) con min-h para estabilidad */}
+      <div className="md:hidden space-y-3 min-h-[560px]">
         {docentes.map((d) => {
           const iniciales =
             `${d.nombres?.[0] || ""}${d.apellidos?.[0] || ""}`.toUpperCase();
@@ -127,8 +127,8 @@ export default function TablaDocentes({
         })}
       </div>
 
-      {/* VISTA DESKTOP (Tabla tradicional) - Se activa solo en pantallas medianas/grandes (>= md) */}
-      <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      {/* VISTA DESKTOP con min-h fija */}
+      <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden min-h-[560px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
