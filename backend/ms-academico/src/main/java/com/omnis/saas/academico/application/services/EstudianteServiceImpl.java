@@ -5,6 +5,7 @@ import com.omnis.saas.academico.domain.ports.in.EstudianteUseCase;
 import com.omnis.saas.academico.domain.ports.out.EstudianteRepositoryPort;
 import com.omnis.saas.academico.domain.ports.out.EstudianteEventPublisherPort;
 import com.omnis.saas.academico.infrastructure.adapters.in.web.dto.EstudianteActualizarDTO;
+import com.omnis.saas.academico.infrastructure.adapters.out.feign.AuthFeignClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +18,22 @@ import java.util.List;
 public class EstudianteServiceImpl implements EstudianteUseCase {
     private final EstudianteRepositoryPort repositoryPort;
     private final EstudianteEventPublisherPort eventPublisher;
+    private final AuthFeignClient authDocenteFeignClient;
 
     @Override
     @Transactional
     public Estudiante registrar(Estudiante estudiante, Long gradoId, Integer anioEscolar, LocalDate fechaInscripcion) {
+        Long colegioId = estudiante.getColegioId();
+
+        // 1. Validar límite del plan SaaS
+        long totalActual = repositoryPort.contarPorColegioId(colegioId);
+        Integer limitePermitido = authDocenteFeignClient.obtenerLimiteAlumnos(colegioId); // 👈 Usas el método aquí
+
+        if (limitePermitido != null && totalActual >= limitePermitido) {
+            throw new IllegalStateException("Has alcanzado el límite máximo de " + limitePermitido + " alumnos permitido por tu suscripción.");
+        }
+
+        // 2. Guardar y emitir evento
         Estudiante estudianteGuardado = repositoryPort.guardar(estudiante);
         eventPublisher.publicarAlumnoRegistrado(estudianteGuardado, gradoId, anioEscolar, fechaInscripcion);
         return estudianteGuardado;

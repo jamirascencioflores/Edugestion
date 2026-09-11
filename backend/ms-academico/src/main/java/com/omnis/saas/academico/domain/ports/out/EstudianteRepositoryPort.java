@@ -12,4 +12,5 @@ public interface EstudianteRepositoryPort {
     Optional<Estudiante> buscarPorId(Long id); // 👈 Nuevo
     void eliminarPorId(Long id); // 👈 Nuevo
     List<Estudiante> buscarPorSeccion(Long seccionId);
+    long contarPorColegioId(Long colegioId);
 }

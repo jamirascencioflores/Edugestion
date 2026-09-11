@@ -24,4 +24,11 @@ public class PlanSaasController {
     public ResponseEntity<PlanSaas> actualizarPlan(@PathVariable Long id, @RequestBody PlanSaas plan) {
         return ResponseEntity.ok(planSaaSUseCase.actualizarPlan(id, plan));
     }
+
+    // En tu Controller de ms-auth (ej: PlanSaasController.java)
+    @GetMapping("/planes/limite-alumnos")
+    public ResponseEntity<Integer> obtenerLimiteAlumnos(@RequestHeader("X-Colegio-Id") Long colegioId) {
+        Integer limite = planSaaSUseCase.obtenerLimiteAlumnos(colegioId);
+        return ResponseEntity.ok(limite);
+    }
 }

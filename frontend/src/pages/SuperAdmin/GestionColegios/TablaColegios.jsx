@@ -88,6 +88,7 @@ export default function TablaColegios({
                   >
                     <option value="TODOS">Todos los planes</option>
                     <option value="BÁSICO">Básico</option>
+                    <option value="ESTÁNDAR">Estándar</option>
                     <option value="PREMIUM">Premium</option>
                   </select>
                 </div>
@@ -171,9 +172,11 @@ export default function TablaColegios({
                       className={`px-2 py-1 rounded-md text-[10px] font-bold ${
                         c.plan === "PREMIUM"
                           ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                          : c.plan === "BÁSICO"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+                          : c.plan === "ESTÁNDAR"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            : c.plan === "BÁSICO"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {c.plan || "N/A"}

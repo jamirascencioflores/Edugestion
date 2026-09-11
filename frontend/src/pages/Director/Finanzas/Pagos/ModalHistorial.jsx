@@ -8,15 +8,21 @@ import {
   Printer,
   Calendar,
   User,
+  Lock,
 } from "lucide-react";
+import Swal from "sweetalert2";
 import { toast } from "sonner";
+import { useAuth } from "../../../../context/AuthContext";
 import api from "../../../../api/axiosConfig";
 
 const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
+  const { user } = useAuth();
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(false);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
   const [filtroTexto, setFiltroTexto] = useState("");
+
+  const permiteReportesPdf = user?.colegio?.plan?.permiteReportesPdf ?? true;
 
   useEffect(() => {
     if (!isOpen || !estudianteId) return;
@@ -25,7 +31,6 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
       setLoading(true);
       try {
         const res = await api.get(`/finanzas/historial/${estudianteId}`);
-        // Validar si la respuesta es un array o viene paginada en res.data.content
         const data = Array.isArray(res.data)
           ? res.data
           : Array.isArray(res.data?.content)
@@ -48,6 +53,26 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
 
   const handleDescargarHistorialPdf = async () => {
     if (!estudianteId) return;
+
+    if (!permiteReportesPdf) {
+      const isDark = document.documentElement.classList.contains("dark");
+      Swal.fire({
+        title: "Función Bloqueada",
+        html: `
+          <div class="text-left text-sm space-y-2">
+            <p>La exportación del historial de movimientos en formato PDF requiere tener activo el módulo de <b>Reportes PDF</b>.</p>
+            <p class="text-slate-500 dark:text-slate-400">Actualiza tu suscripción institucional para habilitar esta característica.</p>
+          </div>
+        `,
+        icon: "info",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "var(--color-primary)",
+        background: isDark ? "#1e293b" : "#ffffff",
+        color: isDark ? "#f1f5f9" : "#0f172a",
+      });
+      return;
+    }
+
     setDescargandoPdf(true);
     try {
       const response = await api.get(
@@ -75,7 +100,6 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
     }
   };
 
-  // Validación defensiva para evitar el error si historial no es un array
   const listaHistorial = Array.isArray(historial) ? historial : [];
   const historialFiltrado = listaHistorial.filter((m) =>
     (m?.motivo || "").toLowerCase().includes(filtroTexto.toLowerCase()),
@@ -149,7 +173,7 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
           </div>
         </div>
 
-        {/* Content */}
+        {/* Contenido */}
         <div className="overflow-y-auto flex-1 p-3 sm:p-6">
           {loading ? (
             <div className="flex justify-center items-center py-12">
@@ -157,7 +181,7 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
             </div>
           ) : (
             <>
-              {/* VISTA MÓVIL (Cards) */}
+              {/* Vista Móvil */}
               <div className="lg:hidden space-y-2.5">
                 {historialFiltrado.length === 0 ? (
                   <div className="py-10 text-center text-xs text-slate-400">
@@ -223,7 +247,7 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
                 )}
               </div>
 
-              {/* VISTA DESKTOP (Tabla) */}
+              {/* Vista Desktop */}
               <div className="hidden lg:block rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xs">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80 dark:border-slate-700/80">
@@ -316,15 +340,27 @@ const ModalHistorial = ({ isOpen, onClose, estudianteId, deudas = [] }) => {
             disabled={descargandoPdf || loading || listaHistorial.length === 0}
             style={{ backgroundColor: "var(--color-primary)" }}
             className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-white rounded-xl flex items-center justify-center gap-2 hover:opacity-90 shadow-xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={
+              permiteReportesPdf
+                ? "Descargar Resumen en PDF"
+                : "Función exclusiva del Plan PRO"
+            }
           >
             {descargandoPdf ? (
               <Loader2 size={14} className="animate-spin" />
+            ) : !permiteReportesPdf ? (
+              <Lock size={14} className="text-amber-300" />
             ) : (
               <Printer size={14} />
             )}
             <span>
               {descargandoPdf ? "Generando PDF..." : "Descargar Resumen"}
             </span>
+            {!permiteReportesPdf && (
+              <span className="text-[10px] bg-amber-400 text-slate-950 font-bold px-1.5 py-0.5 rounded-full">
+                PRO
+              </span>
+            )}
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+//src/pages/SuperAdmin/GestionColegios/index.jsx
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Search } from "lucide-react";
 // 1. Cambiamos axios por nuestra instancia configurada

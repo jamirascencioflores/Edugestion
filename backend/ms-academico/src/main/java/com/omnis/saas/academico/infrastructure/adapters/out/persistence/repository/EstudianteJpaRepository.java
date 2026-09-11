@@ -15,4 +15,5 @@ public interface EstudianteJpaRepository extends JpaRepository<EstudianteEntity,
     @Query("SELECT COUNT(DISTINCT e.seccion.id) FROM EstudianteEntity e WHERE e.colegioId = :colegioId AND e.estado = true")
     Long countDistinctSeccionesByColegioId(@Param("colegioId") Long colegioId);
 
+    long countByColegioId(Long colegioId);
 }

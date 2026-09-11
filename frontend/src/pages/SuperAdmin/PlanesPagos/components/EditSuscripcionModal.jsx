@@ -1,8 +1,10 @@
+// src/pages/SuperAdmin/PlanesPagos/components/EditSuscripcionModal.jsx
 import { useState } from "react";
 import { X, Plus, Trash2, DollarSign } from "lucide-react";
 
 export default function EditSuscripcionModal({
   suscripcion,
+  planes = [],
   onClose,
   onSubmit,
 }) {
@@ -43,9 +45,19 @@ export default function EditSuscripcionModal({
     setCargos(updated);
   };
 
-  const precioBase = suscripcion?.planBase?.precioMensual || 0;
+  // Buscar el plan fresco del estado planes
+  const planActual =
+    planes.find(
+      (p) =>
+        p.id === suscripcion?.planBaseId ||
+        p.id === suscripcion?.planBase?.id ||
+        p.nombre?.toUpperCase() ===
+          suscripcion?.planBase?.nombre?.toUpperCase(),
+    ) || suscripcion?.planBase;
+
+  const precioBase = Number(planActual?.precioMensual || 0);
   const sumaCargos = cargos.reduce((acc, c) => acc + (Number(c.monto) || 0), 0);
-  const totalCalculado = Number(precioBase) + sumaCargos;
+  const totalCalculado = precioBase + sumaCargos;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -82,7 +94,8 @@ export default function EditSuscripcionModal({
           <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center text-sm">
             <span className="text-slate-500">Plan Base Asignado:</span>
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              {suscripcion?.planBase?.nombre} (S/ {precioBase}/mes)
+              {planActual?.nombre || suscripcion?.planBase?.nombre} (S/{" "}
+              {precioBase.toFixed(2)}/mes)
             </span>
           </div>
 

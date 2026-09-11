@@ -48,31 +48,53 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Roles iniciales creados.");
         }
 
-        // 2. Crear Planes SaaS si no existen
-        if (planRepository.count() == 0) {
-            PlanSaasEntity basico = new PlanSaasEntity();
-            basico.setNombre("BÁSICO");
-            basico.setLimiteAlumnos(300);
-            basico.setPrecioMensual(new BigDecimal("150.00"));
-            basico.setPermitePortalPadres(false);
-            basico.setPermiteNotificaciones(false);
-            basico.setPermiteReportesPdf(false);
-            basico.setPermiteMarcaBlanca(false);
-            basico.setPermiteFinanzasPro(false);
+        // 2. Crear o Actualizar Planes SaaS (3 Planes)
+        // 2.1 Plan BÁSICO
+        PlanSaasEntity basico = planRepository.findAll().stream()
+                .filter(p -> "BÁSICO".equalsIgnoreCase(p.getNombre()))
+                .findFirst()
+                .orElseGet(PlanSaasEntity::new);
+        basico.setNombre("BÁSICO");
+        basico.setLimiteAlumnos(200);
+        basico.setPrecioMensual(new BigDecimal("180.00"));
+        basico.setPermitePortalPadres(false);
+        basico.setPermiteNotificaciones(false);
+        basico.setPermiteReportesPdf(false);
+        basico.setPermiteMarcaBlanca(false);
+        basico.setPermiteFinanzasPro(false);
+        planRepository.save(basico);
 
-            PlanSaasEntity premium = new PlanSaasEntity();
-            premium.setNombre("PREMIUM");
-            premium.setLimiteAlumnos(999999);
-            premium.setPrecioMensual(new BigDecimal("350.00"));
-            premium.setPermitePortalPadres(true);
-            premium.setPermiteNotificaciones(true);
-            premium.setPermiteReportesPdf(true);
-            premium.setPermiteMarcaBlanca(true);
-            premium.setPermiteFinanzasPro(true);
+        // 2.2 Plan ESTÁNDAR (Nuevo)
+        PlanSaasEntity estandar = planRepository.findAll().stream()
+                .filter(p -> "ESTÁNDAR".equalsIgnoreCase(p.getNombre()))
+                .findFirst()
+                .orElseGet(PlanSaasEntity::new);
+        estandar.setNombre("ESTÁNDAR");
+        estandar.setLimiteAlumnos(500);
+        estandar.setPrecioMensual(new BigDecimal("380.00"));
+        estandar.setPermitePortalPadres(false);    // App móvil exclusiva del Premium
+        estandar.setPermiteNotificaciones(true);   // Avisos automáticos
+        estandar.setPermiteReportesPdf(true);      // Boletas y Recibos oficiales
+        estandar.setPermiteMarcaBlanca(false);
+        estandar.setPermiteFinanzasPro(false);
+        planRepository.save(estandar);
 
-            planRepository.saveAll(List.of(basico, premium));
-            log.info("Planes SaaS iniciales creados.");
-        }
+        // 2.3 Plan PREMIUM (Full)
+        PlanSaasEntity premium = planRepository.findAll().stream()
+                .filter(p -> "PREMIUM".equalsIgnoreCase(p.getNombre()))
+                .findFirst()
+                .orElseGet(PlanSaasEntity::new);
+        premium.setNombre("PREMIUM");
+        premium.setLimiteAlumnos(999999);
+        premium.setPrecioMensual(new BigDecimal("690.00"));
+        premium.setPermitePortalPadres(true);     // Portal + App Móvil
+        premium.setPermiteNotificaciones(true);
+        premium.setPermiteReportesPdf(true);
+        premium.setPermiteMarcaBlanca(true);
+        premium.setPermiteFinanzasPro(true);      // Morosidad PRO
+        planRepository.save(premium);
+
+        log.info("Catálogo de 3 Planes SaaS sincronizado correctamente.");
 
         // 3. Crear el Usuario SuperAdmin
         String emailAdmin = "superadmin@omnissaas.com";

@@ -46,4 +46,9 @@ public class EstudiantePersistenceAdapter implements EstudianteRepositoryPort {
     public void eliminarPorId(Long id) {
         repository.deleteById(id);
     }
+
+    @Override
+    public long contarPorColegioId(Long colegioId) {
+        return repository.countByColegioId(colegioId);
+    }
 }

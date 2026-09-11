@@ -1,3 +1,4 @@
+//src/pages/SuperAdmin/PlanesPagos/index.jsx
 import { useState, useEffect } from "react";
 import { Loader2, Building2, Layers, Settings } from "lucide-react";
 import api from "@/api/axiosConfig";
@@ -170,10 +171,12 @@ export default function PlanesPagosSA() {
 
       {/* PESTAÑA 1: PLANES BASE */}
       {activeTab === "planes" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {planes.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} onEdit={handleOpenEditPlan} />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...planes]
+            .sort((a, b) => Number(a.precioMensual) - Number(b.precioMensual))
+            .map((plan) => (
+              <PlanCard key={plan.id} plan={plan} onEdit={handleOpenEditPlan} />
+            ))}
         </div>
       )}
 
@@ -199,68 +202,83 @@ export default function PlanesPagosSA() {
                   </td>
                 </tr>
               ) : (
-                suscripciones.map((sub) => (
-                  <tr
-                    key={sub.id}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30"
-                  >
-                    <td className="p-4 font-semibold text-slate-800 dark:text-slate-200">
-                      {sub.nombreColegio || `Colegio ID #${sub.colegioId}`}
-                    </td>
-                    <td className="p-4">
-                      <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        {sub.planBase?.nombre || "Sin Plan"}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-1">
-                        {sub.permitePortalPadres && (
-                          <span className="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 px-2 py-0.5 rounded font-semibold">
-                            Padres
-                          </span>
-                        )}
-                        {sub.permiteNotificaciones && (
-                          <span className="text-[10px] bg-blue-50 text-blue-600 dark:bg-blue-950/40 px-2 py-0.5 rounded font-semibold">
-                            Avisos
-                          </span>
-                        )}
-                        {sub.permiteReportesPdf && (
-                          <span className="text-[10px] bg-purple-50 text-purple-600 dark:bg-purple-950/40 px-2 py-0.5 rounded font-semibold">
-                            PDFs
-                          </span>
-                        )}
-                        {sub.permiteMarcaBlanca && (
-                          <span className="text-[10px] bg-amber-50 text-amber-600 dark:bg-amber-950/40 px-2 py-0.5 rounded font-semibold">
-                            M.Blanca
-                          </span>
-                        )}
-                        {sub.permiteFinanzasPro && (
-                          <span className="text-[10px] bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 px-2 py-0.5 rounded font-semibold">
-                            Fin.PRO
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-slate-500">
-                      + S/ {sub.montoAdicional || "0.00"}
-                    </td>
-                    <td className="p-4 font-extrabold text-slate-900 dark:text-white">
-                      S/{" "}
-                      {sub.montoTotalMensual ||
-                        sub.planBase?.precioMensual ||
-                        "0.00"}
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => handleOpenEditSuscripcion(sub)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
-                        title="Personalizar Módulos y Tarifas"
-                      >
-                        <Settings size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                suscripciones.map((sub) => {
+                  // 1. Vincular con el plan fresco del estado 'planes'
+                  const planActual =
+                    planes.find(
+                      (p) =>
+                        p.id === sub.planBaseId ||
+                        p.id === sub.planBase?.id ||
+                        p.nombre?.toUpperCase() ===
+                          sub.planBase?.nombre?.toUpperCase(),
+                    ) || sub.planBase;
+
+                  const precioBaseVigente = Number(
+                    planActual?.precioMensual || 0,
+                  );
+                  const extraAdicional = Number(sub.montoAdicional || 0);
+                  const totalRecalculado = precioBaseVigente + extraAdicional;
+
+                  return (
+                    <tr
+                      key={sub.id}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30"
+                    >
+                      <td className="p-4 font-semibold text-slate-800 dark:text-slate-200">
+                        {sub.nombreColegio || `Colegio ID #${sub.colegioId}`}
+                      </td>
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                          {planActual?.nombre || "Sin Plan"}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-wrap gap-1">
+                          {sub.permitePortalPadres && (
+                            <span className="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 px-2 py-0.5 rounded font-semibold">
+                              Padres
+                            </span>
+                          )}
+                          {sub.permiteNotificaciones && (
+                            <span className="text-[10px] bg-blue-50 text-blue-600 dark:bg-blue-950/40 px-2 py-0.5 rounded font-semibold">
+                              Avisos
+                            </span>
+                          )}
+                          {sub.permiteReportesPdf && (
+                            <span className="text-[10px] bg-purple-50 text-purple-600 dark:bg-purple-950/40 px-2 py-0.5 rounded font-semibold">
+                              PDFs
+                            </span>
+                          )}
+                          {sub.permiteMarcaBlanca && (
+                            <span className="text-[10px] bg-amber-50 text-amber-600 dark:bg-amber-950/40 px-2 py-0.5 rounded font-semibold">
+                              M.Blanca
+                            </span>
+                          )}
+                          {sub.permiteFinanzasPro && (
+                            <span className="text-[10px] bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 px-2 py-0.5 rounded font-semibold">
+                              Fin.PRO
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-slate-500">
+                        + S/ {extraAdicional.toFixed(2)}
+                      </td>
+                      <td className="p-4 font-extrabold text-slate-900 dark:text-white font-mono">
+                        S/ {totalRecalculado.toFixed(2)}
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => handleOpenEditSuscripcion(sub)}
+                          className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                          title="Personalizar Módulos y Tarifas"
+                        >
+                          <Settings size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -284,6 +302,7 @@ export default function PlanesPagosSA() {
             suscripcionSeleccionada?.id || suscripcionSeleccionada?.colegioId
           }
           suscripcion={suscripcionSeleccionada}
+          planes={planes} // 👈 Pasamos los planes frescos
           onClose={() => setModalSuscripcionOpen(false)}
           onSubmit={handleSubmitSuscripcion}
         />

@@ -380,28 +380,25 @@ function Pricing() {
   useEffect(() => {
     const fetchPlanesPublicos = async () => {
       try {
-        // Usamos fetch directo a la URL base de tu backend para evitar temas de interceptores/tokens
-        const res = await fetch("http://localhost:8080/api/auth/usuarios/public/planes");
+        const res = await fetch(
+          "http://localhost:8080/api/auth/usuarios/public/planes",
+        );
         if (!res.ok) throw new Error("Error en respuesta");
         const data = await res.json();
-
         if (data && data.length > 0) {
           setPlanes(data);
         } else {
           throw new Error("Sin datos");
         }
       } catch (error) {
-        console.warn(
-          "No se pudieron cargar los planes desde la API, usando datos locales:",
-          error,
-        );
-        // Fallback para que la interfaz NUNCA se quede en blanco
+        console.warn("Usando fallback de planes:", error);
+        // Fallback alineado con tu BD
         setPlanes([
           {
             id: 1,
-            nombre: "Plan Básico",
-            precioMensual: 199,
-            limiteAlumnos: 300,
+            nombre: "BÁSICO",
+            precioMensual: 180,
+            limiteAlumnos: 200,
             permitePortalPadres: false,
             permiteNotificaciones: false,
             permiteReportesPdf: false,
@@ -410,10 +407,21 @@ function Pricing() {
           },
           {
             id: 2,
-            nombre: "Plan Premium",
-            precioMensual: 350,
+            nombre: "ESTÁNDAR",
+            precioMensual: 380,
+            limiteAlumnos: 500,
+            permitePortalPadres: false, // 👈 App Móvil exclusiva de Premium
+            permiteNotificaciones: true,
+            permiteReportesPdf: true,
+            permiteMarcaBlanca: false,
+            permiteFinanzasPro: false,
+          },
+          {
+            id: 3,
+            nombre: "PREMIUM",
+            precioMensual: 690,
             limiteAlumnos: 999999,
-            permitePortalPadres: true,
+            permitePortalPadres: true, // 👈 Exclusivo aquí
             permiteNotificaciones: true,
             permiteReportesPdf: true,
             permiteMarcaBlanca: true,
@@ -428,6 +436,10 @@ function Pricing() {
     fetchPlanesPublicos();
   }, []);
 
+  const planesOrdenados = [...planes].sort(
+    (a, b) => Number(a.precioMensual) - Number(b.precioMensual),
+  );
+
   return (
     <section
       id="precios"
@@ -435,10 +447,7 @@ function Pricing() {
     >
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <span
-            className="text-sm font-semibold uppercase tracking-wider"
-            style={{ color: "var(--color-primary)" }}
-          >
+          <span className="text-sm font-semibold uppercase tracking-wider text-purple-600">
             Precios
           </span>
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -454,97 +463,120 @@ function Pricing() {
             <Loader2 className="animate-spin text-slate-400" size={36} />
           </div>
         ) : (
-          <div className="mx-auto mt-14 grid max-w-4xl gap-6 md:grid-cols-2">
-            {planes.map((plan) => {
-              const esPopular = plan.nombre.toLowerCase().includes("premium");
-
-              const caracteristicas = [
-                plan.limiteAlumnos >= 999999
-                  ? "Estudiantes ilimitados"
-                  : `Hasta ${plan.limiteAlumnos} estudiantes`,
-                "Módulo Académico",
-                "Módulo de Finanzas",
-                plan.permitePortalPadres && "Portal de Padres + App móvil",
-                plan.permiteNotificaciones && "Notificaciones Automáticas",
-                plan.permiteReportesPdf && "Reportes Avanzados en PDF",
-                plan.permiteMarcaBlanca && "Marca Blanca (Sin logos)",
-                plan.permiteFinanzasPro && "Finanzas PRO (Morosidad)",
-              ].filter(Boolean);
+          <div className="mx-auto mt-14 grid max-w-6xl gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {planesOrdenados.map((plan) => {
+              // El plan del medio (Estándar) lleva el destaque
+              const esRecomendado =
+                plan.nombre.toUpperCase().includes("ESTÁNDAR") ||
+                plan.nombre.toUpperCase().includes("ESTANDAR");
 
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-3xl bg-white dark:bg-slate-800 p-8 shadow-sm flex flex-col justify-between border-2 ${
-                    esPopular
-                      ? "shadow-xl"
+                  className={`relative rounded-3xl bg-white dark:bg-slate-800 p-8 shadow-sm flex flex-col justify-between border-2 transition-all hover:shadow-lg ${
+                    esRecomendado
+                      ? "shadow-xl border-purple-600 ring-2 ring-purple-600/10"
                       : "border-slate-200 dark:border-slate-700"
                   }`}
-                  style={{
-                    borderColor: esPopular ? "var(--color-primary)" : undefined,
-                  }}
                 >
-                  {esPopular && (
-                    <span
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-semibold text-white shadow-sm"
-                      style={{ backgroundColor: "var(--color-primary)" }}
-                    >
-                      Más popular
+                  {esRecomendado && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-semibold text-white bg-purple-600 shadow-sm uppercase tracking-wide">
+                      Más Popular
                     </span>
                   )}
 
                   <div>
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                       {plan.nombre}
                     </h3>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      {esPopular
-                        ? "Para instituciones en crecimiento."
-                        : "Ideal para colegios pequeños."}
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 min-h-[32px]">
+                      {plan.limiteAlumnos >= 999999
+                        ? "Para instituciones educativas de gran escala."
+                        : `Para instituciones de hasta ${plan.limiteAlumnos} alumnos.`}
                     </p>
 
                     <div className="mt-6 flex items-baseline gap-1">
-                      <span
-                        className="text-5xl font-bold"
-                        style={{
-                          color: esPopular ? "var(--color-primary)" : undefined,
-                        }}
-                      >
+                      <span className="text-4xl sm:text-5xl font-extrabold font-mono text-slate-900 dark:text-white">
                         S/ {plan.precioMensual}
                       </span>
-                      <span className="text-slate-500">/mes</span>
+                      <span className="text-slate-500 text-sm">/mes</span>
                     </div>
 
-                    <Button
-                      variant={esPopular ? "default" : "outline"}
-                      className="mt-6 w-full font-medium"
-                      style={
-                        esPopular
-                          ? {
-                              backgroundColor: "var(--color-primary)",
-                              color: "#fff",
-                            }
-                          : {
-                              borderColor: "var(--color-primary)",
-                              color: "var(--color-primary)",
-                            }
-                      }
-                    >
-                      {esPopular ? "Comenzar Premium" : "Empezar ahora"}
-                    </Button>
+                    <a href="#contacto" className="block mt-6">
+                      <Button
+                        variant={esRecomendado ? "default" : "outline"}
+                        className={`w-full font-medium ${
+                          esRecomendado
+                            ? "bg-purple-600 hover:bg-purple-700 text-white"
+                            : "border-purple-600 text-purple-600 hover:bg-purple-50"
+                        }`}
+                      >
+                        Comenzar ahora
+                      </Button>
+                    </a>
 
-                    <ul className="mt-8 space-y-3 text-sm">
-                      {caracteristicas.map((f, i) => (
-                        <li
-                          key={i}
-                          className="flex items-center gap-2 text-slate-700 dark:text-slate-300"
-                        >
-                          <Check
-                            className="h-4 w-4 shrink-0"
-                            style={{ color: "var(--color-primary)" }}
-                          />
-                          {f}
-                        </li>
-                      ))}
+                    <ul className="mt-8 space-y-3 text-xs sm:text-sm">
+                      <li className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>
+                          {plan.limiteAlumnos >= 999999
+                            ? "Alumnos ilimitados"
+                            : `Hasta ${plan.limiteAlumnos} alumnos`}
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Gestión Académica y Matrículas</span>
+                      </li>
+                      <li className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Gestión de Caja y Cobranzas</span>
+                      </li>
+
+                      <li
+                        className={`flex items-center gap-2 ${plan.permiteReportesPdf ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 line-through"}`}
+                      >
+                        <Check
+                          className={`h-4 w-4 shrink-0 ${plan.permiteReportesPdf ? "text-emerald-500" : "text-slate-300 dark:text-slate-600"}`}
+                        />
+                        <span>Boletas y Recibos en PDF</span>
+                      </li>
+
+                      <li
+                        className={`flex items-center gap-2 ${plan.permiteNotificaciones ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 line-through"}`}
+                      >
+                        <Check
+                          className={`h-4 w-4 shrink-0 ${plan.permiteNotificaciones ? "text-emerald-500" : "text-slate-300 dark:text-slate-600"}`}
+                        />
+                        <span>Notificaciones Automáticas</span>
+                      </li>
+
+                      <li
+                        className={`flex items-center gap-2 ${plan.permitePortalPadres ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 line-through"}`}
+                      >
+                        <Check
+                          className={`h-4 w-4 shrink-0 ${plan.permitePortalPadres ? "text-emerald-500" : "text-slate-300 dark:text-slate-600"}`}
+                        />
+                        <span>Portal de Padres + App Móvil</span>
+                      </li>
+
+                      <li
+                        className={`flex items-center gap-2 ${plan.permiteFinanzasPro ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 line-through"}`}
+                      >
+                        <Check
+                          className={`h-4 w-4 shrink-0 ${plan.permiteFinanzasPro ? "text-emerald-500" : "text-slate-300 dark:text-slate-600"}`}
+                        />
+                        <span>Finanzas PRO (Morosidad)</span>
+                      </li>
+
+                      <li
+                        className={`flex items-center gap-2 ${plan.permiteMarcaBlanca ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 line-through"}`}
+                      >
+                        <Check
+                          className={`h-4 w-4 shrink-0 ${plan.permiteMarcaBlanca ? "text-emerald-500" : "text-slate-300 dark:text-slate-600"}`}
+                        />
+                        <span>Marca Blanca (Sin logos)</span>
+                      </li>
                     </ul>
                   </div>
                 </div>

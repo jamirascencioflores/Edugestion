@@ -9,12 +9,17 @@ import com.omnis.saas.auth.domain.ports.out.*;
 import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.ColegioActualizarDTO;
 import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.ColegioRegistroDTO;
 import com.omnis.saas.auth.infrastructure.adapters.in.web.dto.ColegioResumenDTO;
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.SuscripcionColegioEntity;
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.entity.PlanSaasEntity;
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.SuscripcionColegioJpaRepository;
+import com.omnis.saas.auth.infrastructure.adapters.out.persistence.repository.PlanSaasJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +35,11 @@ public class ColegioServiceImpl implements ColegioUseCase {
     private final UsuarioRepositoryPort usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final DocenteRepositoryPort docenteRepository;
-    private final EmailServicePort emailService; // 👈 1. INYECTAMOS EL PUERTO DE EMAIL
+    private final EmailServicePort emailService;
+
+    // Repositorios JPA para gestionar la sincronización de Suscripciones
+    private final SuscripcionColegioJpaRepository suscripcionRepository;
+    private final PlanSaasJpaRepository planSaasJpaRepository;
 
     @Override
     @Transactional
@@ -53,10 +62,25 @@ public class ColegioServiceImpl implements ColegioUseCase {
 
         nuevoColegio = colegioRepository.save(nuevoColegio);
 
+        // Crear registro inicial de suscripción
+        PlanSaasEntity planEntity = planSaasJpaRepository.findById(plan.getId()).orElse(null);
+        if (planEntity != null) {
+            SuscripcionColegioEntity nuevaSub = new SuscripcionColegioEntity();
+            nuevaSub.setColegioId(nuevoColegio.getId());
+            nuevaSub.setPlanBase(planEntity);
+            nuevaSub.setPermitePortalPadres(planEntity.getPermitePortalPadres());
+            nuevaSub.setPermiteNotificaciones(planEntity.getPermiteNotificaciones());
+            nuevaSub.setPermiteReportesPdf(planEntity.getPermiteReportesPdf());
+            nuevaSub.setPermiteMarcaBlanca(planEntity.getPermiteMarcaBlanca());
+            nuevaSub.setPermiteFinanzasPro(planEntity.getPermiteFinanzasPro());
+            nuevaSub.setMontoAdicional(BigDecimal.ZERO);
+            nuevaSub.setMontoTotalMensual(planEntity.getPrecioMensual());
+            suscripcionRepository.save(nuevaSub);
+        }
+
         Rol rolResponsable = rolRepository.findByNombre("ADMIN_COLEGIO")
                 .orElseThrow(() -> new RuntimeException("El rol ADMIN_COLEGIO no existe"));
 
-        // 👈 2. GENERAMOS UN TOKEN ÚNICO DE ACTIVACIÓN
         String tokenActivacion = UUID.randomUUID().toString();
 
         Usuario responsable = Usuario.builder()
@@ -67,13 +91,12 @@ public class ColegioServiceImpl implements ColegioUseCase {
                 .rol(rolResponsable)
                 .estado(true)
                 .debeCambiarPassword(true)
-                .tokenActivacion(tokenActivacion) // 👈 AGREGA ESTA LÍNEA AQUÍ
+                .tokenActivacion(tokenActivacion)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         usuarioRepository.save(responsable);
 
-        // 👈 3. DISPARAR EL ENVÍO DEL CORREO A MAILTRAP
         try {
             emailService.enviarInvitacion(
                     dto.emailResponsable(),
@@ -82,7 +105,6 @@ public class ColegioServiceImpl implements ColegioUseCase {
                     dto.subdominio()
             );
         } catch (Exception e) {
-            // Se captura el log para evitar revertir el registro del colegio si falla la red SMTP
             System.err.println("⚠ No se pudo enviar el correo de activación: " + e.getMessage());
         }
 
@@ -93,7 +115,6 @@ public class ColegioServiceImpl implements ColegioUseCase {
     @Transactional(readOnly = true)
     public List<ColegioResumenDTO> listarTodos() {
         return colegioRepository.findAll().stream().map(colegio -> {
-
             var responsableOpt = usuarioRepository.findFirstByColegioIdAndRolNombre(colegio.getId(), "ADMIN_COLEGIO");
 
             String nombreResp = responsableOpt.map(Usuario::getNombreCompleto).orElse("Sin asignar");
@@ -115,13 +136,47 @@ public class ColegioServiceImpl implements ColegioUseCase {
     @Override
     @Transactional
     public Colegio actualizarColegio(Long id, ColegioActualizarDTO dto) {
-        Colegio colegio = colegioRepository.findById(id).orElseThrow(() -> new RuntimeException("Colegio no encontrado"));
+        Colegio colegio = colegioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Colegio no encontrado"));
         colegio.setNombre(dto.nombre());
 
-        PlanSaas plan = planSaasRepository.findByNombre(dto.plan()).orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        PlanSaas plan = planSaasRepository.findByNombre(dto.plan())
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
         colegio.setPlan(plan);
         colegio = colegioRepository.save(colegio);
 
+        // 1. Sincronizar tabla suscripciones_colegio
+        PlanSaasEntity planEntity = planSaasJpaRepository.findById(plan.getId()).orElse(null);
+        if (planEntity != null) {
+            suscripcionRepository.findByColegioId(id).ifPresentOrElse(sub -> {
+                sub.setPlanBase(planEntity);
+                sub.setPermitePortalPadres(planEntity.getPermitePortalPadres());
+                sub.setPermiteNotificaciones(planEntity.getPermiteNotificaciones());
+                sub.setPermiteReportesPdf(planEntity.getPermiteReportesPdf());
+                sub.setPermiteMarcaBlanca(planEntity.getPermiteMarcaBlanca());
+                sub.setPermiteFinanzasPro(planEntity.getPermiteFinanzasPro());
+
+                BigDecimal adicional = sub.getMontoAdicional() != null ? sub.getMontoAdicional() : BigDecimal.ZERO;
+                sub.setMontoTotalMensual(planEntity.getPrecioMensual().add(adicional));
+
+                suscripcionRepository.save(sub);
+            }, () -> {
+                // Si el colegio existía pero aún no tenía fila de suscripción
+                SuscripcionColegioEntity nuevaSub = new SuscripcionColegioEntity();
+                nuevaSub.setColegioId(id);
+                                nuevaSub.setPlanBase(planEntity);
+                nuevaSub.setPermitePortalPadres(planEntity.getPermitePortalPadres());
+                nuevaSub.setPermiteNotificaciones(planEntity.getPermiteNotificaciones());
+                nuevaSub.setPermiteReportesPdf(planEntity.getPermiteReportesPdf());
+                nuevaSub.setPermiteMarcaBlanca(planEntity.getPermiteMarcaBlanca());
+                nuevaSub.setPermiteFinanzasPro(planEntity.getPermiteFinanzasPro());
+                nuevaSub.setMontoAdicional(BigDecimal.ZERO);
+                nuevaSub.setMontoTotalMensual(planEntity.getPrecioMensual());
+                suscripcionRepository.save(nuevaSub);
+            });
+        }
+
+        // 2. Actualizar nombre del responsable
         usuarioRepository.findFirstByColegioIdAndRolNombre(id, "ADMIN_COLEGIO")
                 .ifPresent(admin -> {
                     admin.setNombreCompleto(dto.nombreResponsable());
@@ -152,13 +207,13 @@ public class ColegioServiceImpl implements ColegioUseCase {
         }
 
         try {
-            // 1. Borrar docentes primero (evita el error de llave foránea)
+            // 1. Borrar docentes
             docenteRepository.deleteByColegioId(id);
 
             // 2. Borrar usuarios
             usuarioRepository.deleteByColegioId(id);
 
-            // 3. Borrar el colegio
+            // 4. Borrar el colegio
             colegioRepository.delete(colegio);
         } catch (Exception e) {
             throw new RuntimeException("Error al eliminar los datos vinculados: " + e.getMessage());

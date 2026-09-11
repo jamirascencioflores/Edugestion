@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Plus, GraduationCap, Search } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../../api/axiosConfig";
+import { useAuth } from "../../../../context/AuthContext";
 import TablaEstudiantes from "./TablaEstudiantes";
 import ModalEstudiante from "./ModalEstudiante";
 import KpiCardsEstudiantes from "./KpiCardsEstudiantes";
 import { Paginacion } from "../../../../components/common/Paginacion";
+import Swal from "sweetalert2";
 
 export default function EstudiantesIndex() {
   const [estudiantes, setEstudiantes] = useState([]);
@@ -71,8 +73,42 @@ export default function EstudiantesIndex() {
     };
   }, []);
 
+  const { user } = useAuth();
+
+  const limiteAlumnos = user?.colegio?.plan?.limiteAlumnos ?? 300;
+  const totalAlumnosActual = estudiantes.length;
+  const haAlcanzadoLimite = totalAlumnosActual >= limiteAlumnos;
+
   const handleOpenModal = (estudiante = null) => {
-    setEstudianteEditando(estudiante);
+    // Si es para editar (estudiante != null), siempre se permite
+    if (estudiante) {
+      setEstudianteEditando(estudiante);
+      setIsModalOpen(true);
+      return;
+    }
+
+    // Si es un NUEVO estudiante y ya superó el límite del plan:
+    if (haAlcanzadoLimite) {
+      const isDark = document.documentElement.classList.contains("dark");
+      Swal.fire({
+        title: "Límite de Alumnos Alcanzado",
+        html: `
+        <div class="text-left text-sm space-y-2">
+          <p>Tu plan actual tiene un cupo máximo de <b>${limiteAlumnos} alumnos</b> y actualmente tienes registrados <b>${totalAlumnosActual}</b>.</p>
+          <p class="text-slate-500">Para matricular más estudiantes, necesitas solicitar una ampliación de cupo o actualizar a un plan superior.</p>
+        </div>
+      `,
+        icon: "warning",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "var(--color-primary)",
+        background: isDark ? "#1e293b" : "#ffffff",
+        color: isDark ? "#f1f5f9" : "#0f172a",
+      });
+      return;
+    }
+
+    // Si tiene cupo disponible, abre el modal normalmente
+    setEstudianteEditando(null);
     setIsModalOpen(true);
   };
 
@@ -139,10 +175,22 @@ export default function EstudiantesIndex() {
         <button
           onClick={() => handleOpenModal()}
           style={{ backgroundColor: "var(--color-primary)" }}
-          className="w-full sm:w-auto text-white px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-xs text-sm font-semibold"
+          className={`w-full sm:w-auto text-white px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-xs text-sm font-semibold ${
+            haAlcanzadoLimite ? "opacity-80 ring-2 ring-amber-400" : ""
+          }`}
+          title={
+            haAlcanzadoLimite
+              ? `Límite alcanzado (${totalAlumnosActual}/${limiteAlumnos})`
+              : "Registrar nuevo alumno"
+          }
         >
           <Plus size={18} />
           <span>Nuevo Estudiante</span>
+          {haAlcanzadoLimite && (
+            <span className="ml-1 text-[10px] bg-amber-400 text-slate-950 font-bold px-1.5 py-0.5 rounded-full">
+              Lleno
+            </span>
+          )}
         </button>
       </div>
 
